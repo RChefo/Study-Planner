@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   { ignores: ['dist', 'legacy', 'node_modules', 'Export Loolify - Copy'] },
   {
-    files: ['src/**/*.{ts,tsx}', 'vite.config.mts'],
+    files: ['src/**/*.{ts,tsx}', 'vite.config.mts', 'tests/**/*.mts'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: { ecmaVersion: 2023, globals: globals.browser },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },

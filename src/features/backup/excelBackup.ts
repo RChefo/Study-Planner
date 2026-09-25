@@ -3,6 +3,14 @@ import type { PlannerData, SyncedPlannerData } from '@/types';
 import { pickTimerSettings, timerState, useTimerStore } from '@/stores/timerStore';
 import { plannerData, usePlannerStore } from '@/stores/plannerStore';
 import { toast } from '@/stores/uiStore';
+import { normalizePlannerData } from '@/lib/plannerData';
+
+/** Attachments present in (possibly untrusted) planner-shaped data. */
+function countAttachments(d: Partial<PlannerData>): number {
+  const courses = Array.isArray(d.courses) ? d.courses : [];
+  const commitments = Array.isArray(d.commitments) ? d.commitments : [];
+  return courses.reduce((n, c) => n + (Array.isArray(c?.topics) ? c.topics.filter(t => t?.pdf).length : 0), 0) + commitments.filter(c => c?.pdf).length;
+}
 
 /**
  * Excel backup, byte-compatible with files produced by the original app:
@@ -114,15 +122,11 @@ export async function importExcelBackup(file: File): Promise<void> {
       useTimerStore.getState().setTimer({ ...d.timerSettings, active: false, paused: false, endsAt: 0 });
       useTimerStore.getState().resetDraftSettings();
     }
-    const restored: PlannerData = {
-      courses: d.courses,
-      sessions: d.sessions,
-      commitments: d.commitments ?? [],
-      studyLog: d.studyLog ?? [],
-      timetable: d.timetable ?? null,
-    };
+    // An imported file is untrusted: coerce shapes and drop unsafe attachments.
+    const restored: PlannerData = normalizePlannerData(d);
+    const dropped = countAttachments(d) - countAttachments(restored);
     await usePlannerStore.getState().commit(() => restored);
-    toast('تمت استعادة بياناتك وملفات PDF من Excel');
+    toast(dropped ? `تمت الاستعادة، وتم تجاهل ${dropped} مرفقًا غير صالح` : 'تمت استعادة بياناتك وملفات PDF من Excel');
   } catch (err) {
     console.error(err);
     toast('ملف Excel غير صالح أو لا يحتوي نسخة رفيق الدراسة');

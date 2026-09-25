@@ -1,9 +1,12 @@
 import type { DataUrl } from '@/types';
-import { previewAttachment } from './previewAttachment';
+import { previewAttachment, saveAttachment } from './previewAttachment';
 import { Icon } from './ui/Icon';
-import { ButtonLink, Button, MiniButton } from './ui/Button';
+import { Button, MiniButton } from './ui/Button';
 
-/** Preview + download controls for a stored PDF. `compact` = inline lecture-row style. */
+/**
+ * Preview + download controls for a stored PDF. Both go through verified blobs — the raw
+ * data URL is never used as a link target.
+ */
 export function AttachmentActions({ data, fileName, fallbackName, compact }: { data: DataUrl; fileName?: string; fallbackName: string; compact?: boolean }) {
   if (compact) {
     return (
@@ -11,9 +14,9 @@ export function AttachmentActions({ data, fileName, fallbackName, compact }: { d
         <MiniButton onClick={() => previewAttachment(data)}>
           <Icon name="eye" size={15} /> معاينة
         </MiniButton>
-        <a className="inline-flex items-center gap-1 px-[5px] py-[2px] text-[13px] text-brand" download={fileName || fallbackName} href={data}>
+        <MiniButton className="text-brand" onClick={() => saveAttachment(data, fileName || fallbackName)}>
           <Icon name="download" size={15} /> تنزيل
-        </a>
+        </MiniButton>
       </>
     );
   }
@@ -22,9 +25,9 @@ export function AttachmentActions({ data, fileName, fallbackName, compact }: { d
       <Button size="sm" className="text-brand" onClick={() => previewAttachment(data)}>
         <Icon name="eye" size={15} /> معاينة وفتح
       </Button>
-      <ButtonLink size="sm" className="text-brand" download={fileName || fallbackName} href={data}>
+      <Button size="sm" className="text-brand" onClick={() => saveAttachment(data, fileName || fallbackName)}>
         <Icon name="download" size={15} /> تنزيل PDF
-      </ButtonLink>
+      </Button>
       <span className="self-center text-xs leading-[1.7] text-muted">{fileName || 'ملف PDF'}</span>
     </div>
   );

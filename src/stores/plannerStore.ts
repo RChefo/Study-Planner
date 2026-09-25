@@ -67,7 +67,9 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
           return { ...d, sessions: d.sessions.filter(x => x.id !== id) };
       }
     }),
-  addStudyLog: entry => get().commit(d => ({ ...d, studyLog: [entry, ...d.studyLog] })),
+  // Idempotent: a round logged by another tab (same deterministic id) is never duplicated.
+  addStudyLog: entry =>
+    get().data.studyLog.some(l => l.id === entry.id) ? Promise.resolve() : get().commit(d => ({ ...d, studyLog: [entry, ...d.studyLog] })),
 }));
 
 export const plannerData = () => usePlannerStore.getState().data;

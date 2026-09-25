@@ -12,6 +12,7 @@ import { authState, patchAuth } from '@/stores/authStore';
 import { plannerData, usePlannerStore } from '@/stores/plannerStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { confirmAction, toast } from '@/stores/uiStore';
+import { broadcastSignedOut } from '@/services/tabChannel';
 
 /**
  * Session lifecycle shared by every sign-in method. Providers only differ in how the
@@ -163,4 +164,5 @@ export async function signOut(): Promise<void> {
   }
   rememberLocalMode(false);
   patchAuth({ user: null, cloudReady: false, status: 'anonymous', notice: null });
+  broadcastSignedOut();
 }

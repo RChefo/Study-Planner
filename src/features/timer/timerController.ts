@@ -1,7 +1,6 @@
 import type { TimerSettings } from '@/types';
 import { playAlarm } from '@/lib/audio';
 import { notifyStudy } from '@/lib/notifications';
-import { uid } from '@/lib/id';
 import { plannerData, usePlannerStore } from '@/stores/plannerStore';
 import { timerState, useTimerStore, type TimerDraft } from '@/stores/timerStore';
 import { toast } from '@/stores/uiStore';
@@ -9,6 +8,9 @@ import { toast } from '@/stores/uiStore';
 /** Pomodoro behaviour ported from the original page; UI components call these. */
 
 const timer = () => useTimerStore.getState();
+
+/** One log entry per focus round, identified by its start time (dedupes across tabs/retries). */
+const focusLogId = (startedAt: number) => `focus-${startedAt}`;
 
 function clampSettings(draft: TimerDraft): TimerSettings {
   const value = (raw: string, def: number, min: number, max: number) => Math.max(min, Math.min(max, parseInt(raw, 10) || def));
@@ -82,7 +84,7 @@ export function stopPomodoro() {
     const elapsed = Math.max(0, Math.floor((Date.now() - t.startedAt) / 1000));
     if (elapsed >= 30) {
       void usePlannerStore.getState().addStudyLog({
-        id: uid(),
+        id: focusLogId(t.startedAt),
         subject: t.subject,
         topic: t.topic,
         startedAt: t.startedAt,
@@ -109,7 +111,7 @@ export function timerTick() {
   }
   if (t.mode === 'focus') {
     void usePlannerStore.getState().addStudyLog({
-      id: uid(),
+      id: focusLogId(t.startedAt),
       subject: t.subject,
       topic: t.topic,
       startedAt: t.startedAt,

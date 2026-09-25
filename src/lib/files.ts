@@ -1,4 +1,5 @@
 import type { DataUrl } from '@/types';
+import { parseAttachment, safeDownloadName } from './attachments';
 
 export function blobToDataUrl(blob: Blob): Promise<DataUrl> {
   return new Promise((resolve, reject) => {
@@ -28,14 +29,37 @@ export async function sha256Hex(bytes: Uint8Array<ArrayBuffer>): Promise<string>
   return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Opens a stored PDF in a new tab. Returns false when the popup was blocked. */
-export function openDataUrlInNewTab(data: DataUrl): boolean {
-  const { mime, bytes } = dataUrlToBytes(data);
-  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+/**
+ * Opens a stored attachment in a new tab. The blob type is the *verified* type — never the
+ * type claimed by the data URL — so a crafted `data:text/html` value can't become a page.
+ */
+export function openAttachmentInNewTab(data: unknown): 'opened' | 'blocked' | 'invalid' {
+  const parsed = parseAttachment(data);
+  if (!parsed) return 'invalid';
+  const url = URL.createObjectURL(new Blob([parsed.bytes], { type: parsed.mime }));
   const tab = window.open(url, '_blank');
   if (!tab) {
     URL.revokeObjectURL(url);
-    return false;
+    return 'blocked';
   }
+  tab.opener = null;
+  // Give the new tab time to load the blob before releasing it.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  return 'opened';
+}
+
+/** Saves a verified attachment to disk under a sanitized name. */
+export function downloadAttachment(data: unknown, name: unknown): boolean {
+  const parsed = parseAttachment(data);
+  if (!parsed) return false;
+  const url = URL.createObjectURL(new Blob([parsed.bytes], { type: parsed.mime }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = safeDownloadName(name, parsed.mime);
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return true;
 }

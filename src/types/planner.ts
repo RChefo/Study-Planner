@@ -73,12 +73,18 @@ export interface LegacyTimetableRef {
   data?: DataUrl;
 }
 
+export interface PlannerPreferences {
+  /** Daily study goal shown on the dashboard. */
+  dailyGoalMinutes?: number;
+}
+
 export interface PlannerData {
   courses: Course[];
   sessions: StudySession[];
   commitments: Commitment[];
   studyLog: StudyLogEntry[];
   timetable: LegacyTimetableRef | null;
+  preferences?: PlannerPreferences;
 }
 
 export const emptyPlannerData = (): PlannerData => ({
