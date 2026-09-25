@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+/* Design tokens carried over 1:1 from the original stylesheet. */
+@theme {
+  --font-sans: 'IBM Plex Sans Arabic', Tahoma, Arial, sans-serif;
+  --color-ink: #1d2b28;
+  --color-muted: #71807b;
+  --color-paper: #f5f6f2;
+  --color-card: #fff;
+  --color-line: #e6eae5;
+  --color-brand: #286b56;
+  --color-brand-soft: #eaf3ed;
+  --color-mint: #e6f2eb;
+  --color-hero: #e7f0e9;
+  --color-accent: #b56832;
+  --color-stripe: #f7f8f5;
+  --shadow-card: 0 8px 28px #1b30210c;
+  --shadow-float: 0 18px 55px #162a2030;
+  /* The original layout switched at max-width:760px (app) and 700px (timetable). */
+  --breakpoint-md: 761px;
+  --breakpoint-sm: 701px;
+}
+
+@layer base {
+  body {
+    @apply m-0 bg-paper font-sans text-ink;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+}

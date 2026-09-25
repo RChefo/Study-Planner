@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الجدول الدراسي — الفرقة الثالثة | رفيق الدراسة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1d2b28;--muted:#71807b;--paper:#f5f6f2;--card:#fff;--line:#e6eae5;--green:#286b56;--mint:#e6f2eb;--stripe:#f7f8f5;--shadow:0 8px 28px #1b30210c}
+  *{box-sizing:border-box}
+  body{margin:0;padding:16px;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif}
+  .wrap{max-width:1500px;margin:0 auto}
+  header{text-align:right;background:#e7f0e9;border-radius:18px;padding:20px 24px;margin-bottom:16px}
+  header h1{margin:0 0 5px;font-size:19px;color:var(--ink)}
+  header h2{margin:0 0 5px;font-size:16px;font-weight:600;color:var(--green)}
+  header h3{margin:0;font-size:13px;font-weight:500;color:var(--muted)}
+  .table-scroll{overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 230px);min-height:440px;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow)}
+  table{border-collapse:separate;border-spacing:0;width:100%;table-layout:fixed;background:var(--card);direction:ltr}
+  th,td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 8px;text-align:center;vertical-align:middle;font-size:12px}
+  thead th{position:sticky;top:0;z-index:3;background:var(--green);color:#fff;font-size:12px;padding:12px 7px;white-space:nowrap}
+  thead th:first-child{border-top-left-radius:12px}
+  .grp-header{background:#347b63;color:#fff;font-weight:700}
+  td.day{position:sticky;left:0;z-index:2;background:#e7f0e9;color:var(--green);font-weight:700;font-size:13px;min-width:60px;width:60px;writing-mode:horizontal-tb;transform:none;letter-spacing:0}
+  thead th:first-child{left:0;z-index:4}
+  td.period{font-weight:700;background:#f0f5f1;color:var(--green);min-width:32px}
+  td.time{font-weight:600;background:#f0f5f1;color:#50665d;white-space:normal;min-width:74px;font-variant-numeric:tabular-nums}
+  td.cell{min-width:0;overflow-wrap:anywhere}
+  td.cell.filled{background:var(--card);transition:background .15s}
+  tr:nth-child(even) td.cell.filled{background:var(--stripe)}
+  td.cell.filled:hover{background:var(--mint)}
+  .subj{font-weight:700;display:block;color:var(--ink);line-height:1.5}
+  .sub2{font-weight:700;display:block;color:var(--ink);margin-top:7px;padding-top:6px;border-top:1px dashed #dce5df;line-height:1.5}
+  .meta{display:block;font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px;line-height:1.5}
+  .tag{font-weight:700;color:var(--green)}
+  .empty{color:#c6d0c9;font-size:15px}
+  .legend{margin-top:12px;padding:12px 15px;border:1px solid var(--line);border-radius:13px;background:var(--card);font-size:12px;color:var(--muted);text-align:center}
+  .legend span{display:inline-block;margin:3px 10px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+  .day-filters{display:flex;gap:8px;overflow-x:auto;padding:2px 1px 10px;margin-bottom:6px;scrollbar-width:thin}
+  .day-filter{flex:0 0 auto;border:1px solid var(--line);border-radius:11px;background:#fff;color:var(--muted);padding:9px 17px;font:inherit;font-size:13px;cursor:pointer;transition:.15s}
+  .day-filter:hover{border-color:#a9cbb8;color:var(--green)}
+  .day-filter.active{background:var(--green);border-color:var(--green);color:white;box-shadow:0 5px 14px #286b5626}
+  .day-title{display:flex;align-items:center;justify-content:space-between;margin:0 2px 12px}
+  .day-title h2{font-size:17px;margin:0;color:var(--ink)}
+  .day-count{font-size:12px;color:var(--green);background:var(--mint);padding:5px 10px;border-radius:20px}
+  .section-week{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;padding:12px 15px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .section-week-copy{display:flex;flex-direction:column;gap:2px}.section-week-copy small{font-size:11px;color:var(--muted)}
+  .section-week-copy strong{font-size:14px;color:var(--green)}.section-week-dates{font-size:11px;color:var(--muted);white-space:nowrap}
+  .group-filter{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:10px 13px;background:#fff;border:1px solid var(--line);border-radius:12px}
+  .group-filter label{font-size:12px;color:var(--muted);font-weight:600}
+  .group-filter select{min-width:150px;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#f7f8f5;color:var(--ink);font:inherit;font-size:12px;outline-color:var(--green)}
+  .copy-open{margin-right:auto;border:0;border-radius:9px;padding:8px 12px;background:var(--green);color:#fff;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .copy-overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:14px;background:#15231f75}
+  .copy-overlay[hidden],.group-picks[hidden]{display:none!important}
+  .copy-dialog{width:min(480px,100%);max-height:90vh;overflow:auto;border-radius:18px;padding:20px;background:#fff;box-shadow:0 24px 70px #162a2040}
+  .copy-dialog h2{margin:0 0 5px;font-size:18px;color:var(--ink)}
+  .copy-help{margin:0 0 15px;font-size:12px;color:var(--muted);line-height:1.6}
+  .copy-section-title{display:block;margin:12px 0 7px;font-size:12px;color:var(--ink)}
+  .copy-mode{display:flex;gap:8px;margin-bottom:13px}
+  .copy-mode label{flex:1;display:flex;align-items:center;gap:7px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#f7f8f5;font-size:12px;cursor:pointer}
+  .copy-mode input,.group-picks input{accent-color:var(--green)}
+  .group-picks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-bottom:15px}
+  .group-picks label{display:flex;align-items:center;gap:5px;padding:8px;border:1px solid var(--line);border-radius:9px;font-size:12px;cursor:pointer}
+  .copy-actions{display:flex;justify-content:flex-end;gap:8px}
+  .copy-actions button{border:1px solid var(--line);border-radius:9px;padding:9px 13px;background:#fff;color:var(--ink);font:inherit;font-size:12px;cursor:pointer}
+  .copy-actions .copy-confirm{background:var(--green);border-color:var(--green);color:#fff}
+  .period-list{display:grid;gap:10px}
+  .period-card{background:#fff;border:1px solid var(--line);border-radius:15px;padding:13px 15px;box-shadow:var(--shadow)}
+  .period-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .period-name{font-weight:700;color:var(--green);font-size:13px}
+  .period-time{font-size:12px;color:var(--muted);background:#f0f5f1;padding:5px 9px;border-radius:8px;direction:ltr}
+  .class-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .class-card{min-width:0;padding:10px 11px;border-radius:11px;background:#f7f8f5;border:1px solid #edf0ed}
+  .class-group{display:inline-block;margin-bottom:6px;padding:3px 8px;background:#e6f2eb;color:var(--green);border-radius:20px;font-size:10px;font-weight:700}
+  .class-card .subj{font-size:12px;overflow-wrap:anywhere}
+  .class-card .meta{font-size:10px;overflow-wrap:anywhere}
+  .class-card .sub2{font-size:12px}
+  .no-classes{padding:28px 15px;text-align:center;border:1px dashed #cfd9d2;background:#fff;border-radius:15px;color:var(--muted);font-size:13px}
+  @media(max-width:700px){body{padding:8px}header{padding:13px;border-radius:14px}header h1{font-size:14px}header h2{font-size:12px}.section-week{padding:10px 12px}.section-week-copy strong{font-size:13px}.section-week-dates{font-size:10px}.group-filter{flex-wrap:wrap;justify-content:space-between;padding:9px 11px}.group-filter select{min-width:130px}.copy-open{margin-right:0}.day-filter{padding:8px 13px;font-size:12px}.day-title h2{font-size:15px}.period-card{padding:11px;border-radius:13px}.class-list{grid-template-columns:1fr}.class-card{padding:9px}.class-card .subj,.class-card .sub2{font-size:12px}.class-card .meta{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>جامعة حلوان التكنولوجية الدولية — كلية تكنولوجيا الصناعة والطاقة بالقاهرة</h1>
+    <h2>تكنولوجيا الأمن السيبراني · الفصل الدراسي الأول 2026/2027</h2>
+    <h3>الفرقة الثالثة · اختار اليوم لعرض المحاضرات ومجموعاتها</h3>
+  </header>
+  <div class="section-week"><div class="section-week-copy"><small>التناوب الأسبوعي التلقائي</small><strong id="sectionWeekLabel"></strong></div><span class="section-week-dates" id="sectionWeekDates"></span></div>
+  <div class="group-filter"><label for="groupSelect">عرض المجموعة</label><select id="groupSelect" onchange="changeGroup(this.value)"><option value="">كل المجموعات</option><option value="1">المجموعة 1</option><option value="2">المجموعة 2</option><option value="3">المجموعة 3</option><option value="4">المجموعة 4</option><option value="5">المجموعة 5</option><option value="6">المجموعة 6</option><option value="7">المجموعة 7</option><option value="8">المجموعة 8</option></select><button class="copy-open" type="button" onclick="openCopyDialog()">نسخ الجدول</button></div>
+
+  <nav class="day-filters" id="dayFilters" aria-label="اختيار اليوم"></nav>
+  <div id="daySchedule"></div>
+
+  <div class="legend">
+    <span><span class="tag">(1)</span> = محاضرة المجموعة الأولى</span>
+    <span><span class="tag">(2)</span> = محاضرة المجموعة الثانية</span>
+    <span><span class="tag">(1&amp;2)</span> = محاضرة مشتركة للمجموعتين</span>
+  </div>
+  <div class="copy-overlay" id="copyOverlay" hidden onclick="if(event.target===this)closeCopyDialog()"><section class="copy-dialog" role="dialog" aria-modal="true" aria-labelledby="copyTitle"><h2 id="copyTitle">نسخ الجدول كنص</h2><p class="copy-help">سيُنسخ الجدول لأسبوع <span id="copyWeekLabel"></span>. حدد الأيام والمجموعات التي تريد تضمينها.</p><strong class="copy-section-title">الأيام</strong><div class="copy-mode"><label><input type="radio" name="copyDayMode" value="all" checked onchange="toggleCopyDays()"> كل الأيام</label><label><input type="radio" name="copyDayMode" value="selected" onchange="toggleCopyDays()"> اختيار أيام</label></div><div class="group-picks" id="copyDayPicks" hidden></div><strong class="copy-section-title">المجموعات</strong><div class="copy-mode"><label><input type="radio" name="copyMode" value="all" checked onchange="toggleCopyGroups()"> كل المجموعات</label><label><input type="radio" name="copyMode" value="selected" onchange="toggleCopyGroups()"> اختيار مجموعات</label></div><div class="group-picks" id="copyGroupPicks" hidden></div><div class="copy-actions"><button type="button" onclick="closeCopyDialog()">إلغاء</button><button type="button" class="copy-confirm" onclick="copyScheduleText()">نسخ النص</button></div></section></div>
+</div>
+
+<script>
+// Cell helper: {span, html} — span = number of Group columns covered.
+function c(text, meta, span){
+  span = span || 1;
+  if(!text) return {span:span, html:'<span class="empty">—</span>'};
+  return {span:span, html:'<span class="subj">'+text+'</span>'+(meta?('<span class="meta">'+meta+'</span>'):'')};
+}
+function c2(text1, meta1, text2, meta2, span){
+  span = span || 1;
+  return {span:span, html:'<span class="subj">'+text1+'</span><span class="meta">'+meta1+'</span>'+
+    '<span class="sub2">'+text2+'</span><span class="meta">'+meta2+'</span>'};
+}
+function empty(span){span=span||1; return {span:span, html:'<span class="empty">—</span>'};}
+
+// Each row: [day(optional,rowspan), period, time, [cells...]]  cells sum of spans must = 8
+const data = [
+ // ---------------- FRIDAY ----------------
+ {day:'Friday', rowspan:9, period:1, time:'09:00 - 10:00', cells:[
+    c('Privacy and Anonymity','Dr. Hany Muhammed / A303',4),
+    empty(4)
+ ]},
+ {period:2, time:'10:00 - 11:00', cells:[
+    c('Big Data','Dr. Finan Nagy / A202',4),
+    c('Privacy and Anonymity','Dr. Hany Muhammed / A303',4)
+ ]},
+ {period:3, time:'11:00 - 12:00', cells:[
+    empty(4),
+    c('Big Data','Dr. Finan Nagy / A202',4)
+ ]},
+ {period:4, time:'02:00 - 03:00', cells:[
+    c('Monitoring &amp; Protecting Companies','Dr. Hany Muhammed / A303',4),
+    c('Work Ethic and Ethical Hacking','Dr. Reda Ahmed / A202',4)
+ ]},
+ {period:5, time:'03:00 - 04:00', cells:[
+    c('Work Ethic and Ethical Hacking','Dr. Reda Ahmed / A202',4),
+    c('Monitoring &amp; Protecting Companies','Dr. Hany Muhammed / A303',4)
+ ]},
+ {period:6, time:'04:00 - 05:00', cells:[empty(8)]},
+ {period:7, time:'05:00 - 06:00', cells:[empty(8)]},
+ {period:8, time:'06:00 - 07:00', cells:[empty(8)]},
+ {period:9, time:'07:00 - 08:00', cells:[empty(8)]},
+
+ // ---------------- SATURDAY ----------------
+ {day:'Saturday', rowspan:11, period:1, time:'09:00 - 10:00', cells:[
+    c('Principles of Management and Leadership','Dr. Naglaa Abdulmohsen / O.L',8)
+ ]},
+ {period:2, time:'10:00 - 11:00', cells:[
+    empty(3),
+    c('(2) Work Ethic and Ethical Hacking','Eng. Mariz / A02',1),
+    empty(4)
+ ]},
+ {period:3, time:'11:00 - 12:00', cells:[empty(8)]},
+ {period:4, time:'12:00 - 01:00', cells:[
+    c('Statistics I','Dr. Shaimaa Muhran / F-Seminar',4),
+    empty(4)
+ ]},
+ {period:5, time:'01:00 - 02:00', cells:[
+    empty(4),
+    c('Statistics I','Dr. Shaimaa Muhran / A202',4)
+ ]},
+ {period:6, time:'02:00 - 03:00', cells:[empty(8)]},
+ {period:7, time:'03:00 - 04:00', cells:[
+    empty(1),
+    c('(1) Privacy and Anonymity','Eng. Reem / A01',1),
+    c('(2) Work Ethic and Ethical Hacking','Eng. Mariz / A02',1),
+    empty(5)
+ ]},
+ {period:8, time:'04:00 - 05:00', cells:[empty(8)]},
+ {period:9, time:'05:00 - 06:00', cells:[empty(8)]},
+ {period:10, time:'06:00 - 07:00', cells:[empty(8)]},
+ {period:11, time:'07:00 - 08:00', cells:[empty(8)]},
+
+ // ---------------- SUNDAY ----------------
+ {day:'Sunday', rowspan:11, period:1, time:'09:00 - 10:00', cells:[empty(8)]},
+ {period:2, time:'10:00 - 11:00', cells:[
+    c('(1) Privacy and Anonymity','Eng. Reem / A02',1),
+    empty(1),
+    c('(1) Hacking Methods and Detection','Eng. Mohannad / D101',1),
+    empty(1),
+    c('(2) Hacking Methods and Detection','Eng. Mohannad / D104',1),
+    empty(2),
+    c('(1) Big Data','Eng. Abdulaziz / A01',1)
+ ]},
+ {period:3, time:'11:00 - 12:00', cells:[
+    empty(3),
+    c('(1) Hacking Methods and Detection','Eng. Mohannad / D103',1),
+    c('(1) Big Data','Eng. Abdulaziz / A01',1),
+    c('(1) Work Ethic and Ethical Hacking','Eng. Rodina / A01',1),
+    empty(2)
+ ]},
+ {period:4, time:'12:00 - 01:00', cells:[
+    c('(1) Hacking Methods and Detection','Eng. Mario / D101',1),
+    c('(2) Hacking Methods and Detection','Eng. Mario / D101',1),
+    empty(2),
+    c('(2) Big Data','Eng. Abdulaziz / A305',1),
+    c('(1&amp;2) Big Data','Eng. Abdulaziz / A01 &amp; A305',1),
+    empty(2)
+ ]},
+ {period:5, time:'01:00 - 02:00', cells:[
+    c('Hacking Methods and Their Detection','Dr. Alaa Al-Shenhaby / A304',6),
+    c('(1&amp;2) Big Data','Eng. Abdulaziz / A01 &amp; A305',1),
+    c('(2) Big Data','Eng. Abdulaziz / A305',1)
+ ]},
+ {period:6, time:'02:00 - 03:00', cells:[
+    empty(1),
+    c('(1) Work Ethic and Ethical Hacking','Eng. Mariz / A01',1),
+    c('Hacking Methods and Their Detection','Dr. Alaa Al-Shenhaby / A304',6)
+ ]},
+ {period:7, time:'03:00 - 04:00', cells:[
+    c2('(1) Monitoring and Protecting Companies','Eng. Mariz / A01','(2) Hacking Methods and Detection','Eng. Mario / G105',1),
+    empty(1),
+    c('(1&amp;2) Statistics 1','Eng. Rodina / G205',2),
+    empty(4)
+ ]},
+ {period:8, time:'04:00 - 05:00', cells:[
+    c('(1&amp;2) Statistics 1','Eng. Rodina / A202',2),
+    empty(2),
+    c('(2) Privacy and Anonymity','Eng. Mario / G204',1),
+    c2('(1) Big Data','Eng. Omnia / A01','(2) Privacy and Anonymity','Eng. Mario / G204',1),
+    c2('(1) Privacy and Anonymity','Eng. Mario / G201','(2) Big Data','Eng. Omnia / A01',1),
+    empty(1)
+ ]},
+ {period:9, time:'05:00 - 06:00', cells:[
+    c('(2) Privacy and Anonymity','Eng. Reem / G202',2),
+    empty(1),
+    c('(2) Monitoring and Protecting Companies','Eng. Mariz / A02',1),
+    c2('(1) Work Ethic and Ethical Hacking','Eng. Rodina / A02','(2) Monitoring and Protecting Companies','Eng. Omnia / G205',1),
+    c('(2) Monitoring and Protecting Companies','Eng. Omnia / G205',1),
+    c('(1) Monitoring and Protecting Companies','Eng. Omnia / G204',2)
+ ]},
+ {period:10, time:'06:00 - 07:00', cells:[
+    empty(1),
+    c('(1) Monitoring and Protecting Companies','Eng. Mariz / A02',1),
+    empty(1),
+    c('(2) Privacy and Anonymity','Eng. Reem / A01',1),
+    empty(4)
+ ]},
+ {period:11, time:'07:00 - 08:00', cells:[
+    c('(1) Work Ethic and Ethical Hacking','Eng. Mariz / A01',1),
+    empty(7)
+ ]},
+
+ // ---------------- MONDAY ----------------
+ {day:'Monday', rowspan:11, period:1, time:'09:00 - 10:00', cells:[
+    c('(1) Big Data','Eng. Abdulaziz / A01',1),
+    empty(7)
+ ]},
+ {period:2, time:'10:00 - 11:00', cells:[
+    empty(1),
+    c('(1) Big Data','Eng. Abdulaziz / A01',1),
+    empty(6)
+ ]},
+ {period:3, time:'11:00 - 12:00', cells:[
+    empty(2),
+    c('(1) Big Data','Eng. Abdulaziz / A01',1),
+    empty(4),
+    c('(2) Privacy and Anonymity','Eng. Mario / A01',1)
+ ]},
+ {period:4, time:'12:00 - 01:00', cells:[
+    c('(2) Big Data','Eng. Abdulaziz / A202',2),
+    empty(1),
+    c('(1) Big Data','Eng. Abdulaziz / A01',1),
+    empty(3),
+    c('(2) Monitoring and Protecting Companies','Eng. Omnia / A01',1)
+ ]},
+ {period:5, time:'01:00 - 02:00', cells:[
+    empty(2),
+    c('(2) Big Data','Eng. Abdulaziz / A202',2),
+    c('(1) Hacking Methods and Detection','Eng. Mohannad / D102',1),
+    empty(1),
+    c('(2) Monitoring and Protecting Companies','Eng. Omnia / A01',1),
+    c('(2) Hacking Methods and Detection','Eng. Mohannad / D104',1)
+ ]},
+ {period:6, time:'02:00 - 03:00', cells:[
+    empty(5),
+    c('(1) Hacking Methods and Detection','Eng. Mohannad / G203',1),
+    c2('(1) Hacking Methods and Detection','Eng. Mohannad / G203','(2) Hacking Methods and Detection','Eng. Mohannad / D101',1),
+    c('(2) Work Ethic and Ethical Hacking','Eng. Rodina / A01',1)
+ ]},
+ {period:7, time:'03:00 - 04:00', cells:[
+    c('(2) Monitoring and Protecting Companies','Eng. Mariz / G203',1),
+    c2('(1) Hacking Methods and Detection','Eng. Mario / A304','(2) Monitoring and Protecting Companies','Eng. Mariz / G203',1),
+    empty(2),
+    c('(1&amp;2) Statistics 1','Eng. Omar / G204',2),
+    c('(2) Work Ethic and Ethical Hacking','Eng. Rodina / A01',1),
+    c('(1) Hacking Methods and Detection','Eng. Mohannad / G201',1)
+ ]},
+ {period:8, time:'04:00 - 05:00', cells:[
+    empty(2),
+    c2('(1) Privacy and Anonymity','Eng. Reem / A02','(2) Monitoring and Protecting Companies','Eng. Mariz / A01',1),
+    empty(1),
+    c2('(1) Monitoring and Protecting Companies','Eng. Omnia / A01','(2) Work Ethic and Ethical Hacking','Eng. Rodina / A01',1),
+    c('(2) Work Ethic and Ethical Hacking','Eng. Rodina / G201',1),
+    c('(1&amp;2) Statistics 1','Eng. Omar / G205',2)
+ ]},
+ {period:9, time:'05:00 - 06:00', cells:[
+    empty(2),
+    c('(2) Hacking Methods and Detection','Eng. Mohannad / G202',1),
+    c2('(1) Privacy and Anonymity','Eng. Reem / F-Seminar','(2) Hacking Methods and Detection','Eng. Mohannad / G202',1),
+    c('(1) Privacy and Anonymity','Eng. Reem / F-Seminar',1),
+    c('(1) Monitoring and Protecting Companies','Eng. Omnia / A01',1),
+    c2('(1) Work Ethic and Ethical Hacking','Eng. Rodina / G204','(2) Big Data','Eng. Omnia / A303',1),
+    c('(1) Work Ethic and Ethical Hacking','Eng. Rodina / G204',1)
+ ]},
+ {period:10, time:'06:00 - 07:00', cells:[
+    c('(2) Work Ethic and Ethical Hacking','Eng. Mariz / G201',2),
+    c('(1) Monitoring and Protecting Companies','Eng. Mariz / F-Seminar',2),
+    c('(2) Privacy and Anonymity','Eng. Reem / A02',1),
+    c('(1) Privacy and Anonymity','Eng. Mario / A01',1),
+    empty(2)
+ ]},
+ {period:11, time:'07:00 - 08:00', cells:[
+    empty(2),
+    c2('(1) Work Ethic and Ethical Hacking','Eng. Mariz / G201','(2) Privacy and Anonymity','Eng. Reem / A307',1),
+    c('(1) Work Ethic and Ethical Hacking','Eng. Mariz / G201',1),
+    c('(2) Hacking Methods and Detection','Eng. Mohannad / G104',1),
+    c('(1) Privacy and Anonymity','Eng. Mario / A01',1),
+    c('(1) Big Data','Eng. Omnia / G208',1),
+    c('(2) Big Data','Eng. Abdulaziz / A202',1)
+ ]},
+];
+
+const dayNames = {Friday:'الجمعة',Saturday:'السبت',Sunday:'الأحد',Monday:'الاثنين',Tuesday:'الثلاثاء',Wednesday:'الأربعاء',Thursday:'الخميس'};
+const dayRows = {};
+let currentDay = '';
+data.forEach(row=>{
+  if(row.day){currentDay=row.day;dayRows[currentDay]=[]}
+  if(currentDay)dayRows[currentDay].push(row);
+});
+const dayKeys=Object.keys(dayRows);
+const dayFilters=document.getElementById('dayFilters');
+const daySchedule=document.getElementById('daySchedule');
+const sectionAnchor=Date.UTC(2026,8,25);
+let activeSection=1;
+let activeGroup='';
+try{const savedGroup=localStorage.getItem('studyPlannerTimetableGroup');if(/^[1-8]$/.test(savedGroup||''))activeGroup=savedGroup}catch{}
+document.getElementById('groupSelect').value=activeGroup;
+function changeGroup(value){activeGroup=/^[1-8]$/.test(value)?value:'';try{if(activeGroup)localStorage.setItem('studyPlannerTimetableGroup',activeGroup);else localStorage.removeItem('studyPlannerTimetableGroup')}catch{}renderDay(selectedDay)}
+function getWeekInfo(date=new Date()){
+  const weekdayOffset=(date.getDay()-5+7)%7;
+  let friday=new Date(date.getFullYear(),date.getMonth(),date.getDate()-weekdayOffset);
+  let fridayUtc=Date.UTC(friday.getFullYear(),friday.getMonth(),friday.getDate());
+  if(fridayUtc<sectionAnchor){friday=new Date(2026,8,25);fridayUtc=sectionAnchor}
+  const weekIndex=Math.floor((fridayUtc-sectionAnchor)/604800000);
+  const section=((weekIndex%2)+2)%2+1;
+  const thursday=new Date(friday.getFullYear(),friday.getMonth(),friday.getDate()+6);
+  const fmt=d=>new Intl.DateTimeFormat('ar-EG',{day:'numeric',month:'short'}).format(d);
+  return {section,friday,thursday,label:`من ${fmt(friday)} إلى ${fmt(thursday)}`};
+}
+function refreshSection(force=false){
+  const info=getWeekInfo();
+  const changed=info.section!==activeSection;
+  activeSection=info.section;
+  document.getElementById('sectionWeekLabel').textContent=`أسبوع ${activeSection}`;
+  document.getElementById('sectionWeekDates').textContent=info.label;
+  document.getElementById('copyWeekLabel').textContent=activeSection;
+  if(force||changed)renderDay(selectedDay);
+}
+function filterBySection(markup,section){
+  const box=document.createElement('div');box.innerHTML=markup;
+  return [...box.querySelectorAll('.subj,.sub2')].map(subject=>{
+    const title=subject.textContent.trim();
+    const tag=title.match(/^\((1|2|1\s*&\s*2)\)/);
+    if(tag&&(tag[1]==='1'||tag[1]==='2')&&Number(tag[1])!==section)return '';
+    const meta=subject.nextElementSibling?.classList.contains('meta')?subject.nextElementSibling:null;
+    return subject.outerHTML+(meta?meta.outerHTML:'');
+  }).join('');
+}
+let selectedDay=dayKeys.find(day=>day===new Intl.DateTimeFormat('en-US',{weekday:'long'}).format(new Date()))||dayKeys[0];
+function renderDay(day){
+  selectedDay=day;
+  dayFilters.innerHTML=dayKeys.map(key=>`<button class="day-filter ${key===day?'active':''}" type="button" aria-pressed="${key===day}" onclick="renderDay('${key}')">${dayNames[key]||key}</button>`).join('');
+  const periods=(dayRows[day]||[]).map(row=>{
+    let group=1;
+    const classes=[];
+    row.cells.forEach(cell=>{
+      const first=group,last=group+cell.span-1;group+=cell.span;
+      if(cell.html.includes('class="empty"'))return;
+      if(activeGroup&&(Number(activeGroup)<first||Number(activeGroup)>last))return;
+      const visibleMarkup=filterBySection(cell.html,activeSection);
+      if(!visibleMarkup)return;
+      const label=activeGroup?`المجموعة ${activeGroup}`:first===last?`المجموعة ${first}`:`المجموعات ${first}–${last}`;
+      classes.push(`<article class="class-card"><span class="class-group">${label}</span>${visibleMarkup}</article>`);
+    });
+    if(!classes.length)return '';
+    return `<article class="period-card"><div class="period-head"><span class="period-name">الفترة ${row.period}</span><span class="period-time">${row.time}</span></div><div class="class-list">${classes.join('')}</div></article>`;
+  }).filter(Boolean);
+  const total=periods.length;
+  daySchedule.innerHTML=`<div class="day-title"><h2>جدول ${dayNames[day]||day}</h2><span class="day-count">${total} فترات دراسية</span></div>${total?`<div class="period-list">${periods.join('')}</div>`:'<div class="no-classes">لا توجد محاضرات مسجلة لهذا اليوم.</div>'}`;
+}
+renderDay(selectedDay);
+refreshSection(true);
+setInterval(()=>refreshSection(),60000);
+const copyOverlay=document.getElementById('copyOverlay');
+const copyGroupPicks=document.getElementById('copyGroupPicks');
+const copyDayPicks=document.getElementById('copyDayPicks');
+copyGroupPicks.innerHTML=Array.from({length:8},(_,i)=>i+1).map(n=>`<label><input type="checkbox" value="${n}" ${activeGroup===String(n)?'checked':''}> المجموعة ${n}</label>`).join('');
+copyDayPicks.innerHTML=dayKeys.map(day=>`<label><input type="checkbox" value="${day}" ${day===selectedDay?'checked':''}> ${dayNames[day]||day}</label>`).join('');
+function openCopyDialog(){refreshSection();copyOverlay.hidden=false;toggleCopyGroups();toggleCopyDays()}
+function closeCopyDialog(){copyOverlay.hidden=true}
+function toggleCopyGroups(){const mode=document.querySelector('input[name="copyMode"]:checked')?.value;copyGroupPicks.hidden=mode!=='selected'}
+function toggleCopyDays(){const mode=document.querySelector('input[name="copyDayMode"]:checked')?.value;copyDayPicks.hidden=mode!=='selected'}
+function groupText(groups){
+  if(groups.length===1)return `المجموعة ${groups[0]}`;
+  const sequential=groups.every((n,i)=>i===0||n===groups[i-1]+1);
+  return sequential?`المجموعات ${groups[0]}–${groups[groups.length-1]}`:`المجموعات ${groups.join('، ')}`;
+}
+function plainSubjects(markup){
+  const filtered=filterBySection(markup,activeSection),box=document.createElement('div');box.innerHTML=filtered;
+  return [...box.querySelectorAll('.subj,.sub2')].map(el=>({title:el.textContent.trim(),meta:el.nextElementSibling?.classList.contains('meta')?el.nextElementSibling.textContent.trim():''}));
+}
+function buildScheduleText(selectedGroups,selectedDays){
+  const info=getWeekInfo();
+  const days=selectedDays||dayKeys;
+  const lines=['الجدول الدراسي — تكنولوجيا الأمن السيبراني','أسبوع '+info.section+' ('+info.label+')','الأيام: '+(selectedDays?selectedDays.map(day=>dayNames[day]||day).join('، '):'كل الأيام'),'المجموعات: '+(selectedGroups?selectedGroups.map(n=>'المجموعة '+n).join('، '):'كل المجموعات'),''];
+  days.forEach(day=>{
+    const dayLines=[];
+    (dayRows[day]||[]).forEach(row=>{
+      let group=1;const entries=[];
+      row.cells.forEach(cell=>{
+        const first=group,last=group+cell.span-1;group+=cell.span;
+        if(cell.html.includes('class="empty"'))return;
+        const groups=selectedGroups?selectedGroups.filter(n=>n>=first&&n<=last):Array.from({length:cell.span},(_,i)=>first+i);
+        if(!groups.length)return;
+        const subjects=plainSubjects(cell.html);if(!subjects.length)return;
+        entries.push({groups,subjects});
+      });
+      if(!entries.length)return;
+      dayLines.push(`الفترة ${row.period} · ${row.time}`);
+      entries.forEach(entry=>dayLines.push('  - '+groupText(entry.groups)+': '+entry.subjects.map(s=>s.title+(s.meta?' — '+s.meta:'')).join(' ؛ ')));
+    });
+    if(dayLines.length)lines.push(dayNames[day]||day,...dayLines,'');
+  });
+  return lines.join('\n').trim();
+}
+async function copyScheduleText(){
+  const mode=document.querySelector('input[name="copyMode"]:checked')?.value;
+  const dayMode=document.querySelector('input[name="copyDayMode"]:checked')?.value;
+  const groups=mode==='selected'?[...copyGroupPicks.querySelectorAll('input:checked')].map(el=>Number(el.value)).sort((a,b)=>a-b):null;
+  const selectedDays=dayMode==='selected'?[...copyDayPicks.querySelectorAll('input:checked')].map(el=>el.value):null;
+  if(mode==='selected'&&!groups.length)return alert('اختار مجموعة واحدة على الأقل.');
+  if(dayMode==='selected'&&!selectedDays.length)return alert('اختار يومًا واحدًا على الأقل.');
+  const text=buildScheduleText(groups,selectedDays);let copied=false;
+  try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(text);copied=true}}catch{}
+  if(!copied){const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.appendChild(area);area.select();try{copied=document.execCommand('copy')}catch{}area.remove()}
+  if(copied){closeCopyDialog();alert('تم نسخ الجدول، تقدر تلصقه في أي مكان.')}else alert('تعذر النسخ تلقائيًا. جرّب فتح الموقع في المتصفح والسماح بالنسخ.');
+}
+</script>
+</body>
+</html>

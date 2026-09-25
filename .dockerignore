@@ -1,0 +1,6 @@
+node_modules
+dist
+legacy
+.env
+.claude
+npm-debug.log

@@ -1,0 +1,19 @@
+# Dependencies & build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets — never commit real environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+npm-debug.log*
+
+# Local editor / tool state
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
