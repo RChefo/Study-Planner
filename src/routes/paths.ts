@@ -1,12 +1,27 @@
-/** Central route table. The original tabs (courses/timetable/commitments/studylog) are now URLs. */
+/** Central route table. */
 export const ROUTES = {
-  courses: '/courses',
-  timetable: '/timetable',
-  commitments: '/commitments',
-  studyLog: '/study-log',
+  /** Public landing page. */
+  home: '/',
+  login: '/login',
+  /** Where server-side OAuth (Discord) returns after setting the session cookie. */
+  authCallback: '/auth/callback',
+  /** Dashboard root (requires a session or local mode). */
+  app: '/app',
+  courses: '/app/courses',
+  timetable: '/app/timetable',
+  commitments: '/app/commitments',
+  studyLog: '/app/study-log',
   /** Standalone timetable page (was /university-timetable.html). */
   standaloneTimetable: '/university-timetable',
 } as const;
+
+/** Pre-/app URLs from the first React release, kept as redirects for bookmarks. */
+export const LEGACY_REDIRECTS: Array<[string, string]> = [
+  ['/courses', ROUTES.courses],
+  ['/timetable', ROUTES.timetable],
+  ['/commitments', ROUTES.commitments],
+  ['/study-log', ROUTES.studyLog],
+];
 
 export const NAV_TABS = [
   { to: ROUTES.courses, label: 'المواد' },
@@ -14,3 +29,17 @@ export const NAV_TABS = [
   { to: ROUTES.commitments, label: 'التزاماتي' },
   { to: ROUTES.studyLog, label: 'سجل المذاكرة' },
 ] as const;
+
+/** Accepts only same-site relative paths as post-login destinations (mirrors the server check). */
+export function safeNextPath(value: string | null | undefined, fallback: string = ROUTES.app): string {
+  if (!value || value.length > 512 || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return fallback;
+  return value;
+}
+
+export function loginPath(options: { next?: string; mode?: 'signup' } = {}): string {
+  const params = new URLSearchParams();
+  if (options.mode) params.set('mode', options.mode);
+  if (options.next && options.next !== ROUTES.app) params.set('next', options.next);
+  const query = params.toString();
+  return query ? `${ROUTES.login}?${query}` : ROUTES.login;
+}

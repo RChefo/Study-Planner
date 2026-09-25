@@ -5,6 +5,10 @@ export const STORAGE_KEYS = {
   cloudFileMap: 'rafiq-cloud-files-v1',
   lastCloudUser: 'rafiq-last-user-v1',
   timetableGroup: 'studyPlannerTimetableGroup',
+  /** Set when the user chose "continue without an account", so they skip the sign-in page next time. */
+  localMode: 'study-planner-local-mode-v1',
+  /** Language of the public pages (landing / sign-in). */
+  locale: 'study-planner-locale',
 } as const;
 
 export const IDB = { name: 'rafiq-study-storage', version: 1, store: 'state', key: 'main' } as const;

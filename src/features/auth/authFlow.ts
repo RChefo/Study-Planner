@@ -1,7 +1,9 @@
-import type { SyncedPlannerData } from '@/types';
+import type { SyncedPlannerData, User } from '@/types';
 import { emptyPlannerData } from '@/types';
+import type { AuthErrorCode } from '@/i18n/messages';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storageKeys';
 import { hasPlannerContent, normalizePlannerData } from '@/lib/plannerData';
+import { ApiError } from '@/services/api';
 import { getConfig, getCurrentUser, logout, signInWithGoogle } from '@/services/auth';
 import { fetchPlannerData } from '@/services/plannerApi';
 import { expandCloudData, syncCloudNow } from '@/services/cloudSync';
@@ -10,19 +12,24 @@ import { authState, patchAuth } from '@/stores/authStore';
 import { plannerData, usePlannerStore } from '@/stores/plannerStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { confirmAction, toast } from '@/stores/uiStore';
-import { resumeRunningTimer } from '@/features/timer/timerController';
 
-/** Sign-in and first-sync flow, ported from the original initCloudApp(). */
+/**
+ * Session lifecycle shared by every sign-in method. Providers only differ in how the
+ * session cookie gets set (Google: ID token POST; Discord: server-side OAuth redirect);
+ * after that, loading and merging the user's cloud data is identical.
+ */
 
-function closeGate() {
-  patchAuth({ gateOpen: false });
-  resumeRunningTimer();
-}
+export type SignInResult = { ok: true } | { ok: false; error: AuthErrorCode };
 
-/** Loads the signed-in user's cloud copy, or offers to upload on-device data. */
-async function loadCloudForUser(): Promise<void> {
+const rememberLocalMode = (on: boolean) => writeLocal(STORAGE_KEYS.localMode, on ? '1' : null);
+
+/**
+ * Loads the signed-in user's cloud copy, or offers to upload on-device data.
+ * Returns false if the user declined to move local data (they continue locally).
+ */
+async function loadCloudForUser(): Promise<boolean> {
   const user = authState().user;
-  if (!user) return;
+  if (!user) return false;
   const result = await fetchPlannerData();
   const priorUser = readLocal(STORAGE_KEYS.lastCloudUser);
 
@@ -45,8 +52,9 @@ async function loadCloudForUser(): Promise<void> {
         writeLocal(STORAGE_KEYS.lastCloudUser, user.sub);
         await syncCloudNow(local);
       } else {
-        patchAuth({ user: null, localMode: true, cloudReady: false });
-        return;
+        patchAuth({ user: null, cloudReady: false, status: 'local' });
+        rememberLocalMode(true);
+        return false;
       }
     } else {
       const data = emptyPlannerData();
@@ -55,23 +63,22 @@ async function loadCloudForUser(): Promise<void> {
     }
   }
   writeLocal(STORAGE_KEYS.lastCloudUser, user.sub);
-  patchAuth({ cloudReady: true });
+  rememberLocalMode(false);
+  patchAuth({ cloudReady: true, status: 'authenticated', notice: null });
+  return true;
 }
 
-export async function initCloudApp(): Promise<void> {
+/** Runs once on startup: restores on-device data, reads provider config and any existing session. */
+export async function bootstrapSession(): Promise<void> {
   requestPersistentStorage();
   usePlannerStore.getState().replace(await restoreLocal());
-  patchAuth({ gateOpen: true });
+  const localChosen = readLocal(STORAGE_KEYS.localMode) === '1';
 
-  let clientId: string;
   try {
-    clientId = (await getConfig()).googleClientId || '';
+    const config = await getConfig();
+    patchAuth({ googleClientId: config.googleClientId || '', discordEnabled: !!config.discordEnabled, configLoaded: true });
   } catch {
-    patchAuth({ message: 'شغّل نسخة الويب من الخادم أولًا. وتقدر تتابع محليًا على هذا الجهاز.' });
-    return;
-  }
-  if (!clientId) {
-    patchAuth({ message: 'تسجيل Google غير مهيأ بعد. أضف إعدادات .env ثم أعد تشغيل الموقع، أو تابع محليًا.' });
+    patchAuth({ configLoaded: true, status: localChosen ? 'local' : 'anonymous', notice: localChosen ? null : 'service_unavailable' });
     return;
   }
 
@@ -80,35 +87,59 @@ export async function initCloudApp(): Promise<void> {
     if (user) {
       patchAuth({ user });
       await loadCloudForUser();
-      closeGate();
-      patchAuth({ googleClientId: clientId });
       return;
     }
-    // Setting the client id makes the AuthGate render the Google button.
-    patchAuth({ googleClientId: clientId, message: 'سجّل الدخول بحساب Google لفتح خطتك من أي جهاز.' });
   } catch (err) {
     console.error(err);
-    patchAuth({ googleClientId: clientId, message: 'تعذر تحميل تسجيل Google. راجع الاتصال أو تابع محليًا.' });
+    patchAuth({ user: null, status: localChosen ? 'local' : 'anonymous', notice: localChosen ? null : 'sync_failed' });
+    return;
   }
+  patchAuth({ status: localChosen ? 'local' : 'anonymous' });
 }
 
-export async function handleGoogleCredential(credential: string): Promise<void> {
+function googleErrorCode(err: unknown): AuthErrorCode {
+  if (err instanceof ApiError) {
+    if (err.code === 'google_account_not_verified') return 'google_unverified';
+    if (err.code === 'google_sign_in_not_configured') return 'google_not_configured';
+    if (err.status >= 500) return 'server_error';
+    return 'google_failed';
+  }
+  return err instanceof TypeError ? 'provider_unavailable' : 'google_failed';
+}
+
+/** Google Identity Services hands us an ID token; the server verifies it and sets the session cookie. */
+export async function signInWithGoogleCredential(credential: string): Promise<SignInResult> {
+  let user;
   try {
-    patchAuth({ message: 'جارٍ تسجيل الدخول ومزامنة بياناتك…' });
-    const { user } = await signInWithGoogle(credential);
-    patchAuth({ user, localMode: false });
-    await loadCloudForUser();
-    closeGate();
-    toast(authState().user ? 'تم تسجيل الدخول ومزامنة بياناتك' : 'بياناتك محفوظة محليًا ولم يتم نقلها');
+    ({ user } = await signInWithGoogle(credential));
   } catch (err) {
     console.error(err);
-    patchAuth({ message: (err instanceof Error && err.message) || 'تعذر تسجيل الدخول. حاول مرة أخرى.' });
+    return { ok: false, error: googleErrorCode(err) };
+  }
+  return finishSignIn(user);
+}
+
+/*
+ * Redirect-based providers (Discord) need no function here: the server sets the session
+ * cookie before redirecting to /auth/callback, and bootstrapSession() picks it up on load.
+ */
+
+async function finishSignIn(user: User): Promise<SignInResult> {
+  patchAuth({ user, notice: null });
+  try {
+    const synced = await loadCloudForUser();
+    toast(synced ? 'تم تسجيل الدخول ومزامنة بياناتك' : 'بياناتك محفوظة محليًا ولم يتم نقلها');
+    return { ok: true };
+  } catch (err) {
+    console.error(err);
+    patchAuth({ user: null, status: 'anonymous', cloudReady: false });
+    return { ok: false, error: 'sync_failed' };
   }
 }
 
 export function continueLocalMode(): void {
-  patchAuth({ localMode: true, cloudReady: false });
-  closeGate();
+  rememberLocalMode(true);
+  patchAuth({ status: 'local', cloudReady: false, notice: null });
   toast('أنت تستخدم البيانات المحلية على هذا الجهاز');
 }
 
@@ -118,11 +149,6 @@ export async function signOut(): Promise<void> {
   } catch {
     /* clear local session state regardless */
   }
-  patchAuth({
-    user: null,
-    cloudReady: false,
-    localMode: false,
-    message: 'سجّل الدخول بحساب Google لمزامنة بياناتك.',
-    gateOpen: true,
-  });
+  rememberLocalMode(false);
+  patchAuth({ user: null, cloudReady: false, status: 'anonymous', notice: null });
 }

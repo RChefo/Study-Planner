@@ -1,17 +1,26 @@
 import { create } from 'zustand';
 import type { User } from '@/types';
+import type { AuthErrorCode } from '@/i18n/messages';
+
+/**
+ * - loading:       checking the session on startup
+ * - authenticated: signed in (Google or Discord); cloud sync active once `cloudReady`
+ * - local:         "continue without an account" — data stays on this device
+ * - anonymous:     neither; the dashboard redirects to /login
+ */
+export type SessionStatus = 'loading' | 'authenticated' | 'local' | 'anonymous';
 
 export interface AuthFields {
+  status: SessionStatus;
   user: User | null;
-  /** User chose to keep using on-device data only. */
-  localMode: boolean;
   /** Cloud copy has been loaded/merged; local edits may now be pushed. */
   cloudReady: boolean;
-  gateOpen: boolean;
-  /** True once the gate has been dismissed at least once (the timer resumes then). */
-  started: boolean;
-  message: string;
+  /** /api/config has answered (or failed). */
+  configLoaded: boolean;
   googleClientId: string;
+  discordEnabled: boolean;
+  /** Something the sign-in page should explain (expired session, server unreachable…). */
+  notice: AuthErrorCode | null;
 }
 
 interface AuthState extends AuthFields {
@@ -19,14 +28,14 @@ interface AuthState extends AuthFields {
 }
 
 export const useAuthStore = create<AuthState>(set => ({
+  status: 'loading',
   user: null,
-  localMode: false,
   cloudReady: false,
-  gateOpen: true,
-  started: false,
-  message: 'جارٍ الاتصال بالخدمة…',
+  configLoaded: false,
   googleClientId: '',
-  patch: patch => set(patch.gateOpen === false ? { ...patch, started: true } : patch),
+  discordEnabled: false,
+  notice: null,
+  patch: patch => set(patch),
 }));
 
 export const authState = () => useAuthStore.getState();

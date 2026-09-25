@@ -77,8 +77,8 @@ let queued = false;
 let latest: PlannerData | null = null;
 
 const canSync = () => {
-  const { user, cloudReady, localMode } = authState();
-  return !!user && cloudReady && !localMode;
+  const { user, cloudReady, status } = authState();
+  return !!user && cloudReady && status !== 'local';
 };
 
 export function scheduleCloudSync(data: PlannerData): void {
@@ -107,12 +107,8 @@ export async function syncCloudNow(data?: PlannerData): Promise<void> {
   } catch (err) {
     console.error(err);
     if (err instanceof ApiError && err.status === 401) {
-      patchAuth({
-        user: null,
-        cloudReady: false,
-        message: 'انتهت جلسة الدخول. سجّل الدخول مرة أخرى لمتابعة المزامنة.',
-        gateOpen: true,
-      });
+      // The dashboard's route guard sends the user to /login, which shows this notice.
+      patchAuth({ user: null, cloudReady: false, status: 'anonymous', notice: 'session_expired' });
     } else {
       toast('حُفظت التغييرات على هذا الجهاز، وتعذرت المزامنة مؤقتًا');
     }

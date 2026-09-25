@@ -15,6 +15,8 @@ export interface ApiErrorBody {
 
 export interface ConfigResponse {
   googleClientId: string;
+  /** True when the server has DISCORD_CLIENT_ID/SECRET/REDIRECT_URI configured. */
+  discordEnabled?: boolean;
 }
 
 export interface AuthResponse {

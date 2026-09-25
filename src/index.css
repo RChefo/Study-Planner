@@ -19,6 +19,35 @@
   /* The original layout switched at max-width:760px (app) and 700px (timetable). */
   --breakpoint-md: 761px;
   --breakpoint-sm: 701px;
+  --breakpoint-xs: 400px;
+
+  /* Public pages (landing / sign-in). `subtle` keeps body copy above WCAG AA on paper. */
+  --color-subtle: #56645f;
+  --color-brand-deep: #0d4a3a;
+  --color-brand-night: #0c2f26;
+  --color-brand-bright: #2e9e6f;
+  --color-discord: #5865f2;
+  --color-discord-hover: #4752c4;
+  --shadow-lift: 0 1px 2px #0d2a2008, 0 12px 32px -12px #0d2a2024;
+  --shadow-hero: 0 1px 2px #0d2a200a, 0 30px 80px -30px #0d4a3a40;
+
+  --animate-fade-up: fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 @layer base {
@@ -33,5 +62,13 @@
   }
   button {
     cursor: pointer;
+  }
+  /* Visible keyboard focus everywhere (mouse clicks don't trigger :focus-visible). */
+  a:focus-visible,
+  button:focus-visible,
+  [role='button']:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
   }
 }

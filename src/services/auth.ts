@@ -15,3 +15,6 @@ export async function getCurrentUser(): Promise<User | null> {
 }
 
 export const logout = () => apiRequest<null>('/api/auth/logout', { method: 'POST' });
+
+/** Full-page redirect target that starts the server-side Discord OAuth flow. */
+export const discordSignInUrl = (next: string) => `/api/auth/discord/start?next=${encodeURIComponent(next)}`;

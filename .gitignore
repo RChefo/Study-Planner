@@ -17,3 +17,6 @@ npm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Raw brand-kit drop (the Loolify logo actually used lives in src/assets/branding/)
+/Export Loolify - Copy/
