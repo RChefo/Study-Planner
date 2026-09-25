@@ -119,6 +119,7 @@ const ar = {
     session_expired: 'انتهت جلستك. سجّل الدخول مرة أخرى لمتابعة المزامنة.',
     service_unavailable: 'تعذّر الاتصال بالخدمة. تحقّق من اتصالك، أو تابع بدون حساب.',
     sync_failed: 'سُجِّل دخولك، لكن تعذّر تحميل بياناتك. حاول مرة أخرى.',
+    rate_limited: 'محاولات كثيرة خلال وقت قصير. انتظر قليلًا ثم حاول مرة أخرى.',
   },
 };
 
@@ -240,6 +241,7 @@ const en: Messages = {
     session_expired: 'Your session has expired. Sign in again to keep syncing.',
     service_unavailable: 'We couldn’t reach the service. Check your connection, or continue without an account.',
     sync_failed: 'You’re signed in, but we couldn’t load your data. Please try again.',
+    rate_limited: 'Too many attempts in a short time. Please wait a moment and try again.',
   },
 };
 

@@ -1,5 +1,5 @@
 import type { FileUploadResponse, JsonObject, PlannerDataResponse, SavePlannerDataResponse } from '@/types';
-import { apiFetch, apiRequest } from './api';
+import { apiFetch, apiRequest, toApiError } from './api';
 
 export const fetchPlannerData = () => apiRequest<PlannerDataResponse>('/api/data');
 
@@ -12,6 +12,6 @@ export const uploadFile = (data: string, name: string) =>
 
 export async function downloadFile(id: string): Promise<Blob> {
   const response = await apiFetch(`/api/files/${encodeURIComponent(id)}`);
-  if (!response.ok) throw new Error('تعذر تنزيل ملف مرفق من السحابة');
+  if (!response.ok) throw await toApiError(response);
   return response.blob();
 }

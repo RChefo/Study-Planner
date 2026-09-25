@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'legacy', 'node_modules'] },
+  { ignores: ['dist', 'legacy', 'node_modules', 'Export Loolify - Copy'] },
   {
     files: ['src/**/*.{ts,tsx}', 'vite.config.mts'],
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
@@ -19,8 +19,15 @@ export default tseslint.config(
     },
   },
   {
-    files: ['server.js'],
+    // Node code: server, entry point and tests (CommonJS).
+    files: ['server.js', 'server/**/*.js', 'tests/**/*.js'],
     extends: [js.configs.recommended],
-    languageOptions: { sourceType: 'commonjs', globals: globals.node },
+    languageOptions: { ecmaVersion: 2023, sourceType: 'commonjs', globals: globals.node },
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_', caughtErrors: 'none' }],
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+    },
   },
 );

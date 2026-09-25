@@ -98,13 +98,25 @@ export async function bootstrapSession(): Promise<void> {
 }
 
 function googleErrorCode(err: unknown): AuthErrorCode {
-  if (err instanceof ApiError) {
-    if (err.code === 'google_account_not_verified') return 'google_unverified';
-    if (err.code === 'google_sign_in_not_configured') return 'google_not_configured';
-    if (err.status >= 500) return 'server_error';
-    return 'google_failed';
+  if (!(err instanceof ApiError)) return 'google_failed';
+  switch (err.code) {
+    case 'GOOGLE_ACCOUNT_UNVERIFIED':
+      return 'google_unverified';
+    case 'PROVIDER_NOT_CONFIGURED':
+      return 'google_not_configured';
+    case 'PROVIDER_UNAVAILABLE':
+    case 'NETWORK_ERROR':
+      return 'provider_unavailable';
+    case 'RATE_LIMITED':
+      return 'rate_limited';
+    case 'DATABASE_UNAVAILABLE':
+    case 'SERVICE_UNAVAILABLE':
+      return 'service_unavailable';
+    case 'INVALID_CREDENTIAL':
+      return 'google_failed';
+    default:
+      return err.status >= 500 ? 'server_error' : 'google_failed';
   }
-  return err instanceof TypeError ? 'provider_unavailable' : 'google_failed';
 }
 
 /** Google Identity Services hands us an ID token; the server verifies it and sets the session cookie. */
