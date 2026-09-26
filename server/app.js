@@ -13,7 +13,7 @@ const { filesRouter, createFileStore } = require('./routes/files');
  * Builds the Express app. Dependencies are injected so tests can supply an in-memory
  * database and fake identity providers; production wiring lives in server.js.
  */
-function createApp({ config, db, bucket, logger, googleVerifier = null, discordClient = null, clientDir = null, isReady = async () => true, clock }) {
+function createApp({ config, db, bucket, logger, googleVerifier = null, discordClient = null, clientDir = null, isReady = async () => true, isShuttingDown = () => false, clock }) {
   const app = express();
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy);
@@ -28,6 +28,11 @@ function createApp({ config, db, bucket, logger, googleVerifier = null, discordC
     next();
   };
 
+  // While draining for shutdown, ask clients not to reuse the connection.
+  app.use((req, res, next) => {
+    if (isShuttingDown()) res.setHeader('Connection', 'close');
+    next();
+  });
   app.use(requestId());
   app.use(accessLog(logger));
   app.use(securityHeaders(config));

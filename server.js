@@ -28,6 +28,7 @@ async function main() {
     discordClient: createDiscordClient({ discord: config.discord, timeoutMs: config.timeouts.providerMs }),
     clientDir: path.join(__dirname, 'dist'),
     isReady: async () => !shuttingDown && ping(db),
+    isShuttingDown: () => shuttingDown,
   });
 
   const server = app.listen(config.port, () => logger.info('server listening', { port: config.port, env: config.nodeEnv }));
@@ -45,7 +46,12 @@ async function main() {
       process.exit(exitCode || 1);
     }, config.timeouts.shutdownMs);
     force.unref();
+    // Keep-alive sockets that finish their in-flight request become idle *after* close() was
+    // called; sweep them so shutdown completes as soon as the last response is sent.
+    const sweep = setInterval(() => server.closeIdleConnections?.(), 200);
+    sweep.unref();
     server.close(async () => {
+      clearInterval(sweep);
       await client.close().catch(err => logger.error('database close failed', { err }));
       logger.info('shutdown complete');
       process.exit(exitCode);
