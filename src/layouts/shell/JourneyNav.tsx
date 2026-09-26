@@ -12,7 +12,7 @@ import { useTodayRemaining } from './useTodayRemaining';
 const LAST = STATIONS.length - 1;
 
 /**
- * Phones and tablets: the study path, always visible under the page title — every station
+ * Phones and tablets: the study path as a journey footer, always visible — every station
  * is a small stop you can tap, the stretch behind you is gold, the stretch ahead is dashed,
  * and where you are is dark with a gold halo and named. The detailed sheet (with labels
  * and groups) is an extra, opened from the button at the end of the path.

@@ -22,7 +22,7 @@ export function Toast() {
     <div
       role={tone === 'error' ? 'alert' : 'status'}
       aria-live={tone === 'error' ? 'assertive' : 'polite'}
-      className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex justify-center px-4 max-lg:bottom-24"
+      className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex justify-center px-4 max-lg:bottom-[calc(9.5rem+env(safe-area-inset-bottom))]"
     >
       {visible && (
         <div

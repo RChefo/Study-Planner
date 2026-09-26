@@ -137,9 +137,9 @@ export function AppShell() {
       </header>
 
       <PathSlotContext.Provider value={slotApi}>
-        <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-28 pt-2 outline-none sm:px-6 sm:pt-4 lg:px-10 lg:pb-24">
+        <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-[calc(10rem+env(safe-area-inset-bottom))] pt-2 outline-none sm:px-6 sm:pt-4 lg:px-10 lg:pb-24">
           {/* Fallback spot for screens without a title slot (focus mode, errors). */}
-          {!slot && <div ref={setFallback} className="mb-10 sm:mb-12" />}
+          {!slot && <div ref={setFallback} className="mb-12 max-lg:hidden" />}
           <div key={location.pathname} className="motion-safe:animate-enter">
             <Outlet />
           </div>
@@ -147,16 +147,21 @@ export function AppShell() {
       </PathSlotContext.Provider>
       {host &&
         createPortal(
-          <nav aria-label="التنقل الرئيسي">
-            <div className="max-lg:hidden">
-              <StudyPath />
-            </div>
-            <div className="lg:hidden">
-              <JourneyNav />
-            </div>
+          <nav aria-label="التنقل الرئيسي" className="max-lg:hidden">
+            <StudyPath />
           </nav>,
           host,
         )}
+
+      {/* Phones/tablets: the study path as a journey footer — a light strip, not a tab bar. */}
+      <nav
+        aria-label="التنقل الرئيسي"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-line/80 bg-paper/92 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden"
+      >
+        <div className="mx-auto max-w-[440px]">
+          <JourneyNav />
+        </div>
+      </nav>
 
       <FocusControl />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />

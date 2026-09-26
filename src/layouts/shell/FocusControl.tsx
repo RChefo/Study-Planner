@@ -40,7 +40,8 @@ export function FocusControl() {
   const subject = useTimerStore(st => st.timer.subject);
   if (pathname === ROUTES.timer) return null;
 
-  const base = 'fixed bottom-[max(1rem,env(safe-area-inset-bottom))] end-4 z-40 lg:bottom-6 lg:end-6 motion-safe:animate-enter';
+  // Phones: float just above the journey footer (≈76px + safe area); desktop: the corner.
+  const base = 'fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] end-4 z-40 lg:bottom-6 lg:end-6 motion-safe:animate-enter';
 
   if (!s.active) {
     return (
