@@ -2,6 +2,7 @@ import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Icon, type IconName } from './Icon';
 import { Button } from './Button';
+import { PathSlot } from '@/components/wayfinding/PathSlot';
 
 /*
  * App design primitives. The app is mostly flat paper with hairline dividers; `Card` is a
@@ -22,6 +23,8 @@ export function PageHeader({ eyebrow, title, description, actions, className }: 
         {description && <p className="m-0 mt-1.5 max-w-2xl text-[15px] leading-relaxed text-subtle">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {/* the study path sits under the title (inside the app shell only) */}
+      <PathSlot className="basis-full" />
     </header>
   );
 }

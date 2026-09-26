@@ -9,10 +9,13 @@ import { GROUP_LABEL, GROUP_ORDER, SETTINGS, STATIONS, stationIndex } from './na
 import { SyncIndicator } from './SyncIndicator';
 import { useTodayRemaining } from './useTodayRemaining';
 
+const LAST = STATIONS.length - 1;
+
 /**
- * Phones and tablets: "where am I on the path". The header shows the current station and a
- * miniature of the path (a dot per station, gold where you are); tapping opens the whole
- * path as a vertical journey. Every destination is one tap away.
+ * Phones and tablets: the study path, always visible under the page title — every station
+ * is a small stop you can tap, the stretch behind you is gold, the stretch ahead is dashed,
+ * and where you are is dark with a gold halo and named. The detailed sheet (with labels
+ * and groups) is an extra, opened from the button at the end of the path.
  */
 export function JourneyNav() {
   const [open, setOpen] = useState(false);
@@ -20,36 +23,73 @@ export function JourneyNav() {
   const current = stationIndex(pathname);
   const now = useMinuteNow();
   const remaining = useTodayRemaining();
-  const here = current >= 0 ? STATIONS[current] : pathname.startsWith(SETTINGS.to) ? SETTINGS : null;
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`مسار الدراسة — أنت في ${here?.label ?? 'وضع التركيز'}`}
-        className="flex min-w-0 flex-col items-start gap-1.5 rounded-xl px-2 py-1 text-start outline-none transition-colors hover:bg-ink/5 focus-visible:ring-2 focus-visible:ring-[#c19a4f]"
-      >
-        <span className="flex items-center gap-1 text-[15px] font-semibold text-brand-night">
-          {here?.label ?? 'وضع التركيز'}
-          <Icon name="chevronDown" size={15} className="text-muted" />
-        </span>
-        {/* the path in miniature */}
-        <span aria-hidden="true" className="flex items-center">
-          {STATIONS.map((s, i) => (
-            <span key={s.to} className="flex items-center">
-              {i > 0 && <span className={cn('h-px w-3', i <= current ? 'bg-[#c19a4f]' : 'bg-[repeating-linear-gradient(to_left,#b3c2b9_0_2px,transparent_2px_4px)]')} />}
-              <span
-                className={cn('rounded-full', i === current ? 'size-2 bg-[#e0a94f] shadow-[0_0_0_2px_#f2c77e55]' : i < current ? 'size-1.5 bg-[#c19a4f]' : 'size-1.5 bg-[#b3c2b9]')}
-              />
-            </span>
-          ))}
-        </span>
-      </button>
+      <div className="flex max-w-[440px] items-start gap-2 pb-5">
+        <ol aria-label="مسار الدراسة" className="relative m-0 flex min-w-0 flex-1 list-none items-center justify-between p-0">
+          {/* the path: dashed ahead, gold behind you */}
+          <span aria-hidden="true" className="absolute inset-x-5 top-1/2 h-px -translate-y-1/2 bg-[repeating-linear-gradient(to_left,#b3c2b9_0_3px,transparent_3px_7px)]" />
+          <span
+            aria-hidden="true"
+            className="absolute start-5 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-[#c19a4f] transition-[width] duration-500 ease-out motion-reduce:transition-none"
+            style={{ width: current > 0 ? `calc((100% - 40px) * ${current / LAST})` : 0 }}
+          />
+          {STATIONS.map((s, i) => {
+            const home = s.weight === 'home';
+            const here = i === current;
+            return (
+              <li key={s.to} className="relative z-10">
+                <NavLink
+                  to={s.to}
+                  end={s.end}
+                  aria-label={home ? `${s.label} — ${remaining.label}` : s.label}
+                  className="grid size-10 place-items-center rounded-full no-underline outline-none focus-visible:ring-2 focus-visible:ring-[#c19a4f]"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'relative grid place-items-center rounded-full transition-[background-color,box-shadow,color] duration-300',
+                      home ? 'size-8 font-display text-[15px] leading-none tabular-nums' : 'size-7',
+                      here
+                        ? 'bg-brand-night text-dawn shadow-[0_0_0_4px_#f2c77e55,0_0_12px_#e9b87280]'
+                        : i < current
+                          ? 'bg-[#f6ecd6] text-[#8a6420] shadow-[0_0_0_1px_#c19a4f]'
+                          : 'bg-paper text-subtle shadow-[0_0_0_1px_#b3c2b9]',
+                    )}
+                  >
+                    {home ? new Date(now).getDate() : <Icon name={s.icon} size={14} />}
+                    {home && remaining.total > 0 && <span className="absolute -end-0.5 -top-0.5 size-2 rounded-full bg-[#e0a94f] ring-2 ring-paper" />}
+                  </span>
+                </NavLink>
+                {here && (
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      'absolute top-full mt-0.5 whitespace-nowrap text-[11px] font-semibold text-brand-night',
+                      i === 0 ? 'start-0' : i === LAST ? 'end-0' : 'start-1/2 -translate-x-1/2 rtl:translate-x-1/2',
+                    )}
+                  >
+                    {s.label}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label="عرض المسار كاملًا بالأسماء"
+          className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full text-subtle outline-none transition-colors hover:bg-ink/5 hover:text-ink focus-visible:ring-2 focus-visible:ring-[#c19a4f]"
+        >
+          <Icon name="more" size={18} />
+        </button>
+      </div>
 
-      {/* Portalled: the header is sticky with a backdrop filter, which would trap a fixed overlay. */}
+      {/* Portalled so the sheet always overlays the whole app, whatever contains the path. */}
       {createPortal(
         <Dialog open={open} onClose={() => setOpen(false)} title="مسارك الدراسي" description="من اليوم إلى تقدّمك — اختر محطتك.">
           <ol className="relative m-0 list-none p-0">

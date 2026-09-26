@@ -19,6 +19,7 @@ import { usePlannerStore } from '@/stores/plannerStore';
 import { useTimerStore } from '@/stores/timerStore';
 import { confirmAction, toast } from '@/stores/uiStore';
 import { ROUTES } from '@/routes/paths';
+import { PathSlot } from '@/components/wayfinding/PathSlot';
 
 type Stage = 'done' | 'current' | 'next' | 'later';
 
@@ -269,6 +270,7 @@ export function CourseDetailPage() {
           {info.minutes ? ` · ${formatMinutes(info.minutes)} مذاكرة` : ''}
           {info.lastStudiedAt ? ` · آخر مذاكرة ${relativeDay(info.lastStudiedAt, now)}` : ''}
         </p>
+        <PathSlot className="mt-6" />
         <div className="mt-6 flex max-w-2xl items-center gap-4">
           <Progress value={info.percent} label={`تقدّم ${info.course.name}`} className="flex-1" />
           <span className="text-lg font-semibold tabular-nums text-brand">{info.percent}%</span>

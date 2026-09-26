@@ -15,6 +15,7 @@ import { remainingMs, timerModeLabel } from '@/features/timer/timerMath';
 import { dismissCompletion, focusMinutesSoFar, settingError, skipBreak, startFromDraft, stopPomodoro, toggleTimerPause } from '@/features/timer/timerController';
 import { dailyGoal, dayKey, entriesOn, sumMinutes } from '@/features/insights/selectors';
 import { useMinuteNow } from '@/features/insights/hooks';
+import { PathSlot } from '@/components/wayfinding/PathSlot';
 
 const PRESETS: Array<{ label: string; focus: number; shortBreak: number; longBreak: number }> = [
   { label: '25 / 5', focus: 25, shortBreak: 5, longBreak: 15 },
@@ -358,6 +359,7 @@ export function TimerPage() {
       <header className="mb-10">
         <h1 className="font-display m-0 text-[2.1rem] font-normal leading-[1.3] text-brand-night sm:text-[2.6rem]">جولة تركيز</h1>
         <p className="m-0 mt-1.5 text-[15px] text-subtle">اختر ما ستذاكره ومدة الجولة. يُحفظ الوقت تلقائيًا في سجل المذاكرة.</p>
+        <PathSlot className="mt-6" />
       </header>
       <CompletionNote />
       <div className="grid gap-x-16 gap-y-12 lg:grid-cols-[minmax(0,1fr)_320px]">

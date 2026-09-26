@@ -9,6 +9,7 @@ import { TodayTimeline } from '@/features/dashboard/TodayTimeline';
 import { Deadlines, TodayProgress, UpNext } from '@/features/dashboard/Aside';
 import { useTodayClasses, useTodayTimeline } from '@/features/dashboard/useToday';
 import { atMinutes } from '@/features/timetable/classTimes';
+import { PathSlot } from '@/components/wayfinding/PathSlot';
 
 /**
  * Today: NOW (what to study, or the round in progress) → the day's timeline → what's next
@@ -47,6 +48,7 @@ export function DashboardPage() {
           {name ? <span lang={/[؀-ۿ]/.test(name) ? undefined : 'en'}>، {name}</span> : null}
         </h1>
         <p className="m-0 mt-1 max-w-2xl text-[15px] leading-relaxed text-subtle">{summary}</p>
+        <PathSlot className="mt-6" />
       </header>
 
       <div className="grid gap-x-12 gap-y-12 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">

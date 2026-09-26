@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router';
 import { useMinuteNow } from '@/features/insights/hooks';
 import { cn } from '@/lib/cn';
@@ -8,6 +8,12 @@ import { useTodayRemaining } from './useTodayRemaining';
 
 /** Gentle rises and dips so the line reads as a walked path, not a ruler. */
 const LIFT = [0, -4, 3, -3, 4, -2];
+
+/**
+ * The path remounts with each page (it lives under the page title), so the last station is
+ * remembered here: the traveller then walks from where you were to where you are.
+ */
+let lastStation = -1;
 
 /**
  * Desktop wayfinding: the study path itself. Stations are real links; the drawn line (solid
@@ -27,6 +33,14 @@ export function StudyPath() {
     h: number;
     rtl: boolean;
   }>({ pts: [], w: 0, h: 0, rtl: true });
+  const [shown, setShown] = useState(() => (lastStation >= 0 ? lastStation : current));
+
+  useEffect(() => {
+    lastStation = current;
+    if (!geo.pts.length) return;
+    const id = requestAnimationFrame(() => setShown(current));
+    return () => cancelAnimationFrame(id);
+  }, [current, geo.pts.length]);
 
   useLayoutEffect(() => {
     const box = boxRef.current;
@@ -57,12 +71,12 @@ export function StudyPath() {
   }, [current]);
 
   const full = geo.pts.length ? smoothPath(withLeads(geo.pts, geo.w, geo.rtl)) : '';
-  const walked = current > 0 && geo.pts.length ? smoothPath(withLeads(geo.pts, geo.w, geo.rtl).slice(0, current + 2)) : '';
-  const here = current >= 0 ? geo.pts[current] : undefined;
+  const walked = shown > 0 && geo.pts.length ? smoothPath(withLeads(geo.pts, geo.w, geo.rtl).slice(0, shown + 2)) : '';
+  const here = shown >= 0 ? geo.pts[shown] : undefined;
   const today = new Date(now).getDate();
 
   return (
-    <div ref={boxRef} className="relative mx-auto w-full max-w-[760px]">
+    <div ref={boxRef} className="relative w-full max-w-[760px]">
       <svg aria-hidden="true" width={geo.w} height={geo.h} className="pointer-events-none absolute inset-0 overflow-visible">
         <defs>
           <linearGradient id="sp-fade" x1="0" x2={geo.w} y1="0" y2="0" gradientUnits="userSpaceOnUse">
@@ -77,7 +91,7 @@ export function StudyPath() {
       </svg>
 
       {/* the traveller: where you are on the path */}
-      {here && current > 0 && (
+      {here && shown > 0 && (
         <span
           aria-hidden="true"
           className="pointer-events-none absolute z-10 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f2c77e] shadow-[0_0_0_4px_#f2c77e40,0_0_14px_#e9b87299] transition-[left,top] duration-500 ease-out motion-reduce:transition-none"

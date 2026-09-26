@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, NavLink, Outlet, useLocation, useMatches, useNavigation } from 'react-router';
 import { Icon } from '@/components/ui/Icon';
 import { BrandLogo } from '@/components/brand/BrandLogo';
@@ -14,6 +15,7 @@ import { StudyPath } from './shell/StudyPath';
 import { JourneyNav } from './shell/JourneyNav';
 import { FocusControl } from './shell/FocusControl';
 import { SETTINGS } from './shell/navModel';
+import { PathSlotContext, type PathSlotApi } from '@/components/wayfinding/pathSlotContext';
 
 function usePageTitle(): string {
   const matches = useMatches();
@@ -63,9 +65,10 @@ function useSearchShortcut(open: () => void) {
 }
 
 /**
- * Authenticated shell, built around the study path. No sidebar and no tab bar: the path
- * itself (desktop) or a journey selector (phones) is the navigation, drawn quietly above the
- * page; Focus floats as a separate control; search, sync, settings and account sit aside.
+ * Authenticated shell, built around the study path. No sidebar and no tab bar: a thin
+ * utility row on top, then each page's title, then the study path (portalled into the page's
+ * PathSlot — full path on desktop, a compact always-visible path on phones), then content.
+ * Focus floats as a separate control.
  */
 export function AppShell() {
   // The dashboard is Arabic-only, whatever language the public pages were viewed in.
@@ -89,6 +92,15 @@ export function AppShell() {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
+  // The study path renders under the current page's title (see PathSlot), else at the top.
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  const [fallback, setFallback] = useState<HTMLElement | null>(null);
+  const slotApi = useMemo<PathSlotApi>(
+    () => ({ register: node => setSlot(node), unregister: node => setSlot(cur => (cur === node ? null : cur)) }),
+    [],
+  );
+  const host = slot ?? fallback;
+
   const quiet = 'grid size-9 place-items-center rounded-full text-subtle transition-colors hover:bg-ink/5 hover:text-ink';
 
   return (
@@ -98,20 +110,13 @@ export function AppShell() {
       </a>
       <RouteProgress />
 
+      {/* A thin utility row: brand and tools only. Wayfinding lives under each page title. */}
       <header className={cn('sticky top-0 z-30 transition-[background-color,box-shadow] duration-300', scrolled && 'bg-paper/90 shadow-[0_1px_0_#0d2a2010] backdrop-blur-md')}>
-        <nav aria-label="التنقل الرئيسي" className="mx-auto flex h-16 max-w-[1240px] items-center gap-2 px-4 sm:px-6 lg:h-[92px] lg:gap-6 lg:px-10">
+        <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:h-16 lg:px-10">
           <Link to={ROUTES.app} className="shrink-0 rounded-lg" aria-label="Study Planner — اليوم">
-            <BrandLogo size={32} priority />
+            <BrandLogo size={30} priority />
           </Link>
-
-          <div className="hidden min-w-0 flex-1 lg:block">
-            <StudyPath />
-          </div>
-          <div className="min-w-0 flex-1 lg:hidden">
-            <JourneyNav />
-          </div>
-
-          <div className="flex shrink-0 items-center gap-0.5">
+          <div className="ms-auto flex shrink-0 items-center gap-0.5">
             <button type="button" onClick={openSearch} aria-label="بحث (Ctrl+K)" title="بحث · Ctrl K" className={quiet}>
               <Icon name="search" size={18} />
             </button>
@@ -122,22 +127,36 @@ export function AppShell() {
               to={SETTINGS.to}
               aria-label={SETTINGS.label}
               title={SETTINGS.label}
-              className={({ isActive }) =>
-                cn(quiet, 'relative max-lg:hidden', isActive && 'text-brand-night after:absolute after:bottom-0.5 after:size-1 after:rounded-full after:bg-[#e0a94f]')
-              }
+              className={({ isActive }) => cn(quiet, 'relative', isActive && 'text-brand-night after:absolute after:bottom-0.5 after:size-1 after:rounded-full after:bg-[#e0a94f]')}
             >
               <Icon name={SETTINGS.icon} size={18} />
             </NavLink>
             <AccountMenu />
           </div>
-        </nav>
+        </div>
       </header>
 
-      <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-28 pt-4 outline-none sm:px-6 sm:pt-6 lg:px-10 lg:pb-24 lg:pt-2">
-        <div key={location.pathname} className="motion-safe:animate-enter">
-          <Outlet />
-        </div>
-      </main>
+      <PathSlotContext.Provider value={slotApi}>
+        <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-28 pt-2 outline-none sm:px-6 sm:pt-4 lg:px-10 lg:pb-24">
+          {/* Fallback spot for screens without a title slot (focus mode, errors). */}
+          {!slot && <div ref={setFallback} className="mb-10 sm:mb-12" />}
+          <div key={location.pathname} className="motion-safe:animate-enter">
+            <Outlet />
+          </div>
+        </main>
+      </PathSlotContext.Provider>
+      {host &&
+        createPortal(
+          <nav aria-label="التنقل الرئيسي">
+            <div className="max-lg:hidden">
+              <StudyPath />
+            </div>
+            <div className="lg:hidden">
+              <JourneyNav />
+            </div>
+          </nav>,
+          host,
+        )}
 
       <FocusControl />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
