@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { emptyPlannerData, type Commitment, type Lecture, type PlannerData, type StudyLogEntry } from '@/types';
+import { emptyPlannerData, type Commitment, type Lecture, type OnboardingStatus, type PlannerData, type StudyLogEntry } from '@/types';
 import { persistPlanner } from '@/services/persistence';
 import { uid } from '@/lib/id';
 
@@ -19,6 +19,7 @@ interface PlannerState {
   deleteLecture: (courseId: string, index: number) => Promise<void>;
   setLectureFile: (courseId: string, index: number, file: { pdf: string; pdfName: string } | null) => Promise<void>;
   setDailyGoal: (minutes: number) => Promise<void>;
+  setOnboarding: (status: OnboardingStatus) => Promise<void>;
   saveCommitment: (commitment: Commitment) => Promise<void>;
   setCommitmentDone: (id: string, done: boolean) => Promise<void>;
   deleteItem: (collection: PlannerCollection, id: string) => Promise<void>;
@@ -60,6 +61,7 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       ),
     ),
   setDailyGoal: minutes => get().commit(d => ({ ...d, preferences: { ...d.preferences, dailyGoalMinutes: minutes } })),
+  setOnboarding: status => get().commit(d => ({ ...d, preferences: { ...d.preferences, onboarding: { status, at: Date.now() } } })),
   saveCommitment: commitment =>
     get().commit(d => ({
       ...d,

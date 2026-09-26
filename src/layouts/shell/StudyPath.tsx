@@ -76,7 +76,7 @@ export function StudyPath() {
   const today = new Date(now).getDate();
 
   return (
-    <div ref={boxRef} className="relative w-full max-w-[760px]">
+    <div ref={boxRef} data-tour="path" className="relative w-full max-w-[760px]">
       <svg aria-hidden="true" width={geo.w} height={geo.h} className="pointer-events-none absolute inset-0 overflow-visible">
         <defs>
           <linearGradient id="sp-fade" x1="0" x2={geo.w} y1="0" y2="0" gradientUnits="userSpaceOnUse">

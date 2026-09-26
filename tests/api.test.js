@@ -49,6 +49,21 @@ test('Google sign-in → me → data round trip', async () => {
   assert.equal(got.headers.get('cache-control'), 'no-store');
 });
 
+test('onboarding status persists in synced preferences; invalid values are rejected', async () => {
+  const cookie = await t.signIn('onboarding');
+  const base = { courses: [], commitments: [], studyLog: [], sessions: [], timetable: null };
+  for (const status of ['skipped', 'completed']) {
+    const put = await request(t.base, '/api/data', { method: 'PUT', cookie, body: { data: { ...base, preferences: { dailyGoalMinutes: 90, onboarding: { status, at: 1760000000000 } } } } });
+    assert.equal(put.status, 200, put.text);
+    const got = await request(t.base, '/api/data', { cookie });
+    assert.deepEqual(got.json.data.preferences, { dailyGoalMinutes: 90, onboarding: { status, at: 1760000000000 } });
+  }
+  for (const onboarding of [{ status: 'maybe', at: 1 }, { status: 'completed', at: 1, extra: true }, { status: 'completed', at: -5 }]) {
+    const bad = await request(t.base, '/api/data', { method: 'PUT', cookie, body: { data: { ...base, preferences: { onboarding } } } });
+    assert.equal(bad.status, 400, JSON.stringify(onboarding));
+  }
+});
+
 test('legacy-shaped data (missing optional fields) is accepted', async () => {
   const cookie = await t.signIn('legacy');
   const data = {

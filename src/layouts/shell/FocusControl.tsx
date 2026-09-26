@@ -46,6 +46,8 @@ export function FocusControl() {
   if (!s.active) {
     return (
       <Link
+        data-tour="focus"
+        data-tour-avoid=""
         to={ROUTES.timer}
         aria-label="ابدأ جولة تركيز"
         className={cn(
@@ -64,6 +66,8 @@ export function FocusControl() {
   const warm = !s.focus;
   return (
     <div
+      data-tour="focus"
+      data-tour-avoid=""
       role="group"
       aria-label="الجولة الجارية"
       className={cn(

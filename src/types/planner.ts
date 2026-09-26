@@ -73,9 +73,13 @@ export interface LegacyTimetableRef {
   data?: DataUrl;
 }
 
+export type OnboardingStatus = 'completed' | 'skipped';
+
 export interface PlannerPreferences {
   /** Daily study goal shown on the dashboard. */
   dailyGoalMinutes?: number;
+  /** First-run product tour: finished or dismissed (either stops it opening automatically). */
+  onboarding?: { status: OnboardingStatus; at: number };
 }
 
 export interface PlannerData {

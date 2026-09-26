@@ -80,6 +80,8 @@ const timerSettings = z.object({
 
 const preferences = z.object({
   dailyGoalMinutes: z.number().int().min(0).max(1440).optional(),
+  // First-run product tour: completed or skipped (both stop it opening automatically).
+  onboarding: z.strictObject({ status: z.enum(['completed', 'skipped']), at: z.number().int().min(0).max(8.64e15) }).optional(),
 });
 
 const plannerData = z.object({

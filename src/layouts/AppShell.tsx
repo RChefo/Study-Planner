@@ -15,6 +15,9 @@ import { StudyPath } from './shell/StudyPath';
 import { JourneyNav } from './shell/JourneyNav';
 import { FocusControl } from './shell/FocusControl';
 import { SETTINGS } from './shell/navModel';
+import { Menu } from '@/components/ui/Menu';
+import { GuidedTour } from '@/features/onboarding/GuidedTour';
+import { useTourStore } from '@/features/onboarding/tourStore';
 import { PathSlotContext, type PathSlotApi } from '@/components/wayfinding/pathSlotContext';
 
 function usePageTitle(): string {
@@ -50,6 +53,7 @@ function useScrolled(): boolean {
 function useSearchShortcut(open: () => void) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (useTourStore.getState().active) return; // the tour owns the keyboard while open
       const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
       if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
@@ -81,6 +85,7 @@ export function AppShell() {
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const mainRef = useRef<HTMLElement>(null);
   useSearchShortcut(openSearch);
+  const startTour = useTourStore(s => s.start);
 
   useEffect(() => {
     document.title = `${title} · Study Planner`;
@@ -111,7 +116,7 @@ export function AppShell() {
       <RouteProgress />
 
       {/* A thin utility row: brand and tools only. Wayfinding lives under each page title. */}
-      <header className={cn('sticky top-0 z-30 transition-[background-color,box-shadow] duration-300', scrolled && 'bg-paper/90 shadow-[0_1px_0_#0d2a2010] backdrop-blur-md')}>
+      <header data-tour-avoid="" className={cn('sticky top-0 z-30 transition-[background-color,box-shadow] duration-300', scrolled && 'bg-paper/90 shadow-[0_1px_0_#0d2a2010] backdrop-blur-md')}>
         <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:h-16 lg:px-10">
           <Link to={ROUTES.app} className="shrink-0 rounded-lg" aria-label="Study Planner — اليوم">
             <BrandLogo size={30} priority />
@@ -131,6 +136,14 @@ export function AppShell() {
             >
               <Icon name={SETTINGS.icon} size={18} />
             </NavLink>
+            <span data-tour="help" className="inline-flex">
+              <Menu
+                label="الدليل"
+                trigger={<Icon name="help" size={18} />}
+                triggerClassName="size-9 rounded-full"
+                items={[{ label: 'إعادة الجولة التعريفية', icon: 'play', onSelect: startTour }]}
+              />
+            </span>
             <AccountMenu />
           </div>
         </div>
@@ -156,6 +169,8 @@ export function AppShell() {
       {/* Phones/tablets: the study path as a journey footer — a light strip, not a tab bar. */}
       <nav
         aria-label="التنقل الرئيسي"
+        data-tour="path"
+        data-tour-avoid=""
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line/80 bg-paper/92 px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden"
       >
         <div className="mx-auto max-w-[440px]">
@@ -164,6 +179,7 @@ export function AppShell() {
       </nav>
 
       <FocusControl />
+      <GuidedTour />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );

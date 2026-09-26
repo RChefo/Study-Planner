@@ -42,12 +42,14 @@ export function DashboardPage() {
   return (
     <div>
       <header className="mb-8">
-        <p className="m-0 text-[13px] font-medium text-brand">{formatLongDay(now)}</p>
-        <h1 className="font-display m-0 mt-1 text-[2.2rem] font-normal leading-[1.3] text-brand-night sm:text-[2.8rem]">
-          {greeting(now)}
-          {name ? <span lang={/[؀-ۿ]/.test(name) ? undefined : 'en'}>، {name}</span> : null}
-        </h1>
-        <p className="m-0 mt-1 max-w-2xl text-[15px] leading-relaxed text-subtle">{summary}</p>
+        <div data-tour="today">
+          <p className="m-0 text-[13px] font-medium text-brand">{formatLongDay(now)}</p>
+          <h1 className="font-display m-0 mt-1 text-[2.2rem] font-normal leading-[1.3] text-brand-night sm:text-[2.8rem]">
+            {greeting(now)}
+            {name ? <span lang={/[؀-ۿ]/.test(name) ? undefined : 'en'}>، {name}</span> : null}
+          </h1>
+          <p className="m-0 mt-1 max-w-2xl text-[15px] leading-relaxed text-subtle">{summary}</p>
+        </div>
         <PathSlot className="mt-6" />
       </header>
 

@@ -1,4 +1,5 @@
 import type { Commitment, Course, Lecture, PlannerData, PlannerPreferences, StudyLogEntry, StudySession, StudySessionStatus } from '@/types';
+import { parseOnboarding } from '@/features/onboarding/tourModel';
 import { stripUnsafeAttachments } from './attachments';
 
 /**
@@ -76,7 +77,10 @@ function session(raw: Record<string, unknown>, i: number): StudySession {
 
 function preferences(raw: unknown): PlannerPreferences | undefined {
   if (!isObj(raw)) return undefined;
-  return raw.dailyGoalMinutes === undefined ? {} : { dailyGoalMinutes: Math.round(num(raw.dailyGoalMinutes, 0, 1440, 120)) };
+  const prefs: PlannerPreferences = raw.dailyGoalMinutes === undefined ? {} : { dailyGoalMinutes: Math.round(num(raw.dailyGoalMinutes, 0, 1440, 120)) };
+  const onboarding = parseOnboarding(raw.onboarding);
+  if (onboarding) prefs.onboarding = onboarding;
+  return prefs;
 }
 
 /** Fills in missing collections, coerces types and strips unsafe attachments. */

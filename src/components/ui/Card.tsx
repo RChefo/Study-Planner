@@ -16,7 +16,7 @@ export function Card({ className, ...props }: HTMLAttributes<HTMLElement>) {
 /** Page title in the editorial display face, with an optional eyebrow and end-side actions. */
 export function PageHeader({ eyebrow, title, description, actions, className }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode; className?: string }) {
   return (
-    <header className={cn('mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:mb-10', className)}>
+    <header data-tour="page-header" className={cn('mb-8 flex flex-wrap items-end justify-between gap-x-6 gap-y-4 sm:mb-10', className)}>
       <div className="min-w-0">
         {eyebrow && <p className="m-0 mb-1 text-[13px] font-medium text-brand">{eyebrow}</p>}
         <h1 className="font-display m-0 text-[2.1rem] font-normal leading-[1.3] text-brand-night sm:text-[2.6rem]">{title}</h1>
