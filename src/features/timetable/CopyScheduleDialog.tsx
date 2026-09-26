@@ -66,7 +66,7 @@ export function CopyScheduleDialog({ onClose, initialDay, initialGroup }: Props)
   };
 
   return (
-    <Dialog open onClose={onClose} title="نسخ الجدول كنص" className="w-[min(480px,100%)] p-5">
+    <Dialog open onClose={onClose} title="نسخ الجدول كنص" className="w-[min(480px,100%)] p-5 shadow-none!">
       <p className="-mt-3 mb-[15px] text-xs leading-[1.6] text-muted">سيُنسخ الجدول لأسبوع {info.section}. حدد الأيام والمجموعات التي تريد تضمينها.</p>
       <strong className="mb-[7px] mt-3 block text-xs">الأيام</strong>
       <ModeToggle name="copyDayMode" value={dayMode} onChange={setDayMode} allLabel="كل الأيام" pickLabel="اختيار أيام" />

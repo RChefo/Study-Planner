@@ -42,7 +42,7 @@ export function CreateDialog({ run, onClose, first }: { run: Run; onClose: () =>
   };
 
   return (
-    <Dialog open onClose={onClose} title={first ? 'إنشاء جدولك' : 'جدول جديد'} description="تقدر تغيّر أي شيء من هذا لاحقًا من «إعدادات الجدول».">
+    <Dialog open onClose={onClose} className="shadow-none!" title={first ? 'إنشاء جدولك' : 'جدول جديد'} description="تقدر تغيّر أي شيء من هذا لاحقًا من «إعدادات الجدول».">
       <form
         noValidate
         className="space-y-6"
@@ -125,7 +125,7 @@ export function ImportDialog({ run, onClose, defaultGroup }: { run: Run; onClose
   };
 
   return (
-    <Dialog open onClose={onClose} title="استيراد جدول الجامعة" description="جدول الفرقة الثالثة — تكنولوجيا الأمن السيبراني، الفصل الأول 2026/2027. يُنسخ كجدول مستقل تملكه وتعدّله بحرية.">
+    <Dialog open onClose={onClose} className="shadow-none!" title="استيراد جدول الجامعة" description="جدول الفرقة الثالثة — تكنولوجيا الأمن السيبراني، الفصل الأول 2026/2027. يُنسخ كجدول مستقل تملكه وتعدّله بحرية.">
       <fieldset className="mx-0 min-w-0 border-0 p-0">
         <legend className="mb-2 p-0 text-[15px] font-semibold text-ink">مجموعتك</legend>
         <div className="flex flex-wrap gap-1.5">
@@ -153,7 +153,7 @@ export function RenameDialog({ profile, run, onClose }: { profile: TimetableProf
   const [touched, setTouched] = useState(false);
   const error = name.trim() ? null : 'اكتب اسم الجدول';
   return (
-    <Dialog open onClose={onClose} title="إعادة تسمية الجدول">
+    <Dialog open onClose={onClose} className="shadow-none!" title="إعادة تسمية الجدول">
       <form
         noValidate
         onSubmit={async e => {
@@ -190,7 +190,7 @@ export function CopyDayDialog({ profile, day, run, onClose }: { profile: Timetab
     onClose();
   };
   return (
-    <Dialog open onClose={onClose} title={`نسخ يوم ${DAY_LABEL[day]}`} description={`يُنسخ ${arabicCount(count, 'عنصر واحد', 'عنصران', 'عناصر', 'عنصرًا')} إلى الأيام المختارة، وتبقى حصص تلك الأيام كما هي.`}>
+    <Dialog open onClose={onClose} className="shadow-none!" title={`نسخ يوم ${DAY_LABEL[day]}`} description={`يُنسخ ${arabicCount(count, 'عنصر واحد', 'عنصران', 'عناصر', 'عنصرًا')} إلى الأيام المختارة، وتبقى حصص تلك الأيام كما هي.`}>
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="نسخ إلى">
         {orderedDays(profile)
           .filter(d => d !== day)

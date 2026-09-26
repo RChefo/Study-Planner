@@ -96,7 +96,7 @@ export function EntryDialog({ state, profile, courses, run, onClose }: { state: 
   };
 
   return (
-    <Dialog open onClose={onClose} title={editing ? (isBreak ? 'تعديل الاستراحة' : 'تعديل الحصة') : isBreak ? 'إضافة استراحة' : 'إضافة إلى الجدول'} className="sm:w-[min(560px,100%)]">
+    <Dialog open onClose={onClose} title={editing ? (isBreak ? 'تعديل الاستراحة' : 'تعديل الحصة') : isBreak ? 'إضافة استراحة' : 'إضافة إلى الجدول'} className="shadow-none! sm:w-[min(560px,100%)]">
       <form
         noValidate
         onSubmit={e => {

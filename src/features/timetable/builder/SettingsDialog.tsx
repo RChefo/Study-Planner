@@ -73,7 +73,7 @@ export function SettingsDialog({ profile, others, run, onClose }: { profile: Tim
   };
 
   return (
-    <Dialog open onClose={onClose} title="إعدادات الجدول" className="sm:w-[min(640px,100%)]">
+    <Dialog open onClose={onClose} title="إعدادات الجدول" className="shadow-none! sm:w-[min(640px,100%)]">
       <form
         noValidate
         className="space-y-7"
