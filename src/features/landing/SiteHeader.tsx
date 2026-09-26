@@ -11,20 +11,50 @@ import { LANDING_SECTIONS } from './sections';
 
 const pill = 'inline-flex h-10 items-center justify-center rounded-full px-5 text-sm font-semibold no-underline transition-colors';
 
-/** Transparent over the hero; settles onto paper with a hairline once the page scrolls. */
+/**
+ * Transparent over the hero; settles onto paper with a hairline once the page scrolls.
+ * Hides on scroll down (slides fully out, still position: fixed) and slides back on scroll up.
+ */
 export function SiteHeader() {
   const { t } = useI18n();
   const hasSession = useAuthStore(s => s.status === 'authenticated' || s.status === 'local');
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const [focusInside, setFocusInside] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
+  // Direction-aware visibility. Movements under THRESHOLD accumulate (no flicker on tiny
+  // scrolls); near the top the header is always shown. One update per animation frame.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
+    const THRESHOLD = 8;
+    const TOP_ZONE = 64;
+    let lastY = Math.max(0, window.scrollY);
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = Math.max(0, window.scrollY);
+      setScrolled(y > 12);
+      if (y <= TOP_ZONE) {
+        setHidden(false);
+        lastY = y;
+        return;
+      }
+      const delta = y - lastY;
+      if (Math.abs(delta) < THRESHOLD) return;
+      setHidden(delta > 0);
+      lastY = y;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -43,12 +73,17 @@ export function SiteHeader() {
   }, []);
 
   const closeMenu = () => setMenuOpen(false);
+  // Never hide while the menu is open or keyboard focus is in the header.
+  const offscreen = hidden && !menuOpen && !focusInside;
 
   return (
     <header
+      onFocus={() => setFocusInside(true)}
+      onBlur={e => !e.currentTarget.contains(e.relatedTarget as Node | null) && setFocusInside(false)}
       className={cn(
-        'fixed inset-x-0 top-0 z-40 transition-[background-color,border-color,backdrop-filter] duration-300',
+        'fixed inset-x-0 top-0 z-40 transition-[translate,background-color,border-color,backdrop-filter] duration-300 ease-out motion-reduce:transition-none',
         scrolled ? 'border-b border-line/80 bg-paper/90 backdrop-blur-md' : 'border-b border-transparent',
+        offscreen ? '-translate-y-full' : 'translate-y-0',
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
