@@ -9,32 +9,49 @@ import { toast } from '@/stores/uiStore';
 /** Add a course, or rename `course` when given. Mount with a `key` to reset. */
 export function CourseFormDialog({ course, onClose }: { course: Course | null; onClose: () => void }) {
   const [name, setName] = useState(course?.name ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const courses = usePlannerStore(s => s.data.courses);
   const saveCourse = usePlannerStore(s => s.saveCourse);
 
   const submit = () => {
     const trimmed = name.trim();
-    if (!trimmed) return toast('اكتب اسم المادة أولًا');
+    if (!trimmed) return setError('اكتب اسم المادة');
+    if (trimmed.length > 200) return setError('الاسم طويل جدًا (200 حرف كحد أقصى)');
+    if (courses.some(c => c.id !== course?.id && c.name.trim() === trimmed)) return setError('توجد مادة بهذا الاسم بالفعل');
     onClose();
     void saveCourse(course?.id ?? null, trimmed);
-    toast('تم حفظ المادة');
+    toast(course ? 'تم تعديل اسم المادة' : 'تمت إضافة المادة', 'success');
   };
 
   return (
-    <Dialog open onClose={onClose} title={course ? 'تعديل اسم المادة' : 'إضافة مادة'}>
+    <Dialog open onClose={onClose} title={course ? 'تعديل اسم المادة' : 'إضافة مادة'} description={course ? undefined : 'ستُنشأ للمادة صفحة تضيف فيها محاضراتها وملفاتها.'}>
       <form
+        noValidate
         onSubmit={e => {
           e.preventDefault();
           submit();
         }}
       >
-        <Field label="اسم المادة">
-          {id => <TextInput id={id} value={name} onChange={e => setName(e.target.value)} placeholder="مثال: برمجة Java" />}
+        <Field label="اسم المادة" error={error}>
+          {props => (
+            <TextInput
+              {...props}
+              data-autofocus
+              value={name}
+              maxLength={200}
+              onChange={e => {
+                setName(e.target.value);
+                setError(null);
+              }}
+              placeholder="مثال: أمن الشبكات"
+            />
+          )}
         </Field>
         <DialogActions>
-          <Button onClick={onClose}>إلغاء</Button>
           <Button type="submit" variant="primary">
-            حفظ
+            {course ? 'حفظ' : 'إضافة المادة'}
           </Button>
+          <Button onClick={onClose}>إلغاء</Button>
         </DialogActions>
       </form>
     </Dialog>

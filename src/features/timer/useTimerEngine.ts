@@ -14,10 +14,10 @@ export function useTimerEngine() {
   const running = useTimerStore(s => s.timer.active && !s.timer.paused);
   const setNow = useTimerStore(s => s.setNow);
 
-  // Display refresh (every tab).
+  // Display refresh (every tab): twice a second while running; every 30 s when idle so
+  // "today" figures roll over at midnight on a dashboard left open.
   useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setNow(Date.now()), 500);
+    const id = setInterval(() => setNow(Date.now()), running ? 500 : 30_000);
     return () => clearInterval(id);
   }, [running, setNow]);
 

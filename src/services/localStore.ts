@@ -68,3 +68,19 @@ export async function restoreLocal(): Promise<PlannerData> {
 export function requestPersistentStorage(): void {
   navigator.storage?.persist?.().catch(() => {});
 }
+
+/**
+ * Removes everything this app stored on the device (planner copy, attachments, cached upload
+ * ids, timer, preferences). The cloud copy of a signed-in account is not touched.
+ */
+export async function clearDeviceData(): Promise<void> {
+  for (const key of Object.values(STORAGE_KEYS)) writeLocal(key, null);
+  const db = await dbPromise?.catch(() => undefined);
+  db?.close();
+  dbPromise = undefined;
+  await new Promise<void>(resolve => {
+    if (!('indexedDB' in window)) return resolve();
+    const req = indexedDB.deleteDatabase(IDB.name);
+    req.onsuccess = req.onerror = req.onblocked = () => resolve();
+  });
+}

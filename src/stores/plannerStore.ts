@@ -17,6 +17,8 @@ interface PlannerState {
   addLecture: (courseId: string, lecture: Lecture) => Promise<void>;
   toggleLecture: (courseId: string, index: number) => Promise<void>;
   deleteLecture: (courseId: string, index: number) => Promise<void>;
+  setLectureFile: (courseId: string, index: number, file: { pdf: string; pdfName: string } | null) => Promise<void>;
+  setDailyGoal: (minutes: number) => Promise<void>;
   saveCommitment: (commitment: Commitment) => Promise<void>;
   setCommitmentDone: (id: string, done: boolean) => Promise<void>;
   deleteItem: (collection: PlannerCollection, id: string) => Promise<void>;
@@ -47,6 +49,17 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   toggleLecture: (courseId, index) =>
     get().commit(d => mapLectures(d, courseId, ts => ts.map((t, i) => (i === index ? { ...t, done: !t.done } : t)))),
   deleteLecture: (courseId, index) => get().commit(d => mapLectures(d, courseId, ts => ts.filter((_, i) => i !== index))),
+  setLectureFile: (courseId, index, file) =>
+    get().commit(d =>
+      mapLectures(d, courseId, ts =>
+        ts.map((t, i) => {
+          if (i !== index) return t;
+          const { pdf: _pdf, pdfName: _name, ...rest } = t;
+          return file ? { ...rest, ...file } : rest;
+        }),
+      ),
+    ),
+  setDailyGoal: minutes => get().commit(d => ({ ...d, preferences: { ...d.preferences, dailyGoalMinutes: minutes } })),
   saveCommitment: commitment =>
     get().commit(d => ({
       ...d,

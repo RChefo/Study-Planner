@@ -1,41 +1,38 @@
-import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, ComponentProps } from 'react';
+import { Link } from 'react-router';
 import { cn } from '@/lib/cn';
-
-type Variant = 'default' | 'primary';
-type Size = 'md' | 'sm';
-
-const base = 'inline-flex items-center justify-center gap-1 rounded-[11px] border text-sm hover:brightness-[.97] disabled:opacity-60';
-const variants: Record<Variant, string> = {
-  default: 'border-line bg-white text-ink',
-  primary: 'border-brand bg-brand text-white',
-};
-const sizes: Record<Size, string> = { md: 'px-[15px] py-[10px]', sm: 'px-[11px] py-[6px]' };
-
-function buttonClass(variant: Variant = 'default', size: Size = 'md', extra?: string) {
-  return cn(base, variants[variant], sizes[size], extra);
-}
+import { buttonStyles, type Size, type Variant } from './buttonStyles';
+import { Spinner } from './Spinner';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
   size?: Size;
+  /** Shows a spinner, sets aria-busy and blocks clicks. */
+  loading?: boolean;
 }
 
-export function Button({ variant, size, className, type = 'button', ...props }: ButtonProps) {
-  return <button type={type} className={buttonClass(variant, size, className)} {...props} />;
+export function Button({ variant, size, loading, className, children, disabled, type = 'button', ...props }: ButtonProps) {
+  return (
+    <button type={type} className={buttonStyles(variant, size, className)} disabled={disabled} aria-busy={loading || undefined} {...props}>
+      {loading && <Spinner className="size-3.5" />}
+      {children}
+    </button>
+  );
 }
 
-export function ButtonLink({ className, size, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { size?: Size }) {
-  return <a className={buttonClass('default', size, cn('no-underline', className))} {...props} />;
+/** Router link styled as a button. */
+export function ButtonLink({ variant, size, className, ...props }: ComponentProps<typeof Link> & { variant?: Variant; size?: Size }) {
+  return <Link className={buttonStyles(variant, size, cn('no-underline', className))} {...props} />;
 }
 
-/** Bordered compact action button (`.icon-btn`); `accent` = the green "start" style. */
+/** Bordered compact action button (legacy `.icon-btn`); `accent` = green "start" style. */
 export function IconButton({ accent, className, type = 'button', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { accent?: boolean }) {
   return (
     <button
       type={type}
       className={cn(
-        'inline-flex items-center gap-1 rounded-[9px] border px-[10px] py-[7px] text-[13px]',
-        accent ? 'border-[#d6e8dc] bg-brand-soft text-brand' : 'border-line bg-white text-[#53645f]',
+        'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-[13px] transition-colors',
+        accent ? 'border-[#d6e8dc] bg-brand-soft text-brand hover:bg-mint' : 'border-line bg-white text-[#53645f] hover:bg-stripe',
         className,
       )}
       {...props}
@@ -43,12 +40,12 @@ export function IconButton({ accent, className, type = 'button', ...props }: But
   );
 }
 
-/** Borderless text button (`.mini-btn`). */
+/** Borderless text button. */
 export function MiniButton({ className, type = 'button', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type={type}
-      className={cn('inline-flex items-center gap-1 border-0 bg-transparent px-[5px] py-[2px] text-[13px] text-muted', className)}
+      className={cn('inline-flex items-center gap-1 rounded-md border-0 bg-transparent px-1.5 py-1 text-[13px] text-subtle transition-colors hover:bg-ink/5 hover:text-ink', className)}
       {...props}
     />
   );

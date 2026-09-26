@@ -1,15 +1,15 @@
-import { Panel, SectionHeader } from '@/components/ui/Surface';
+import { Card, PageHeader } from '@/components/ui/Card';
 import { TimetableView } from '@/features/timetable/TimetableView';
 
-/** In-app timetable tab (previously an <iframe> of university-timetable.html). */
+/** In-app timetable (previously an <iframe> of university-timetable.html). */
 export function TimetablePage() {
   return (
-    <section>
-      <SectionHeader title="الجدول الدراسي" description="الجدول الجامعي المرفق — للعرض فقط." />
-      <Panel className="overflow-hidden p-0">
+    <div>
+      <PageHeader title="جدول المحاضرات" description="جدول الفرقة الجامعي — للعرض فقط. اختر مجموعتك لعرض محاضراتك." />
+      <Card className="overflow-hidden">
         <TimetableView />
-      </Panel>
-    </section>
+      </Card>
+    </div>
   );
 }
 

@@ -8,7 +8,16 @@ export interface TimerSettings {
   cycles: number;
 }
 
-/** Persisted under localStorage `rafiq-pomodoro-v1` (same shape as before). */
+/** The focus round that just finished — drives the completion screen. */
+export interface CompletedRound {
+  subject: string;
+  topic: string;
+  courseId: string | null;
+  minutes: number;
+  endedAt: number;
+}
+
+/** Persisted under localStorage `rafiq-pomodoro-v1` (older fields unchanged). */
 export interface TimerState extends TimerSettings {
   active: boolean;
   paused: boolean;
@@ -20,4 +29,7 @@ export interface TimerState extends TimerSettings {
   sessionId: string | null;
   completed: number;
   remainingMs?: number;
+  /** Course the current round belongs to (enables "mark lecture as studied"). */
+  courseId?: string | null;
+  lastCompleted?: CompletedRound | null;
 }

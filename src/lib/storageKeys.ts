@@ -9,6 +9,8 @@ export const STORAGE_KEYS = {
   localMode: 'study-planner-local-mode-v1',
   /** Language of the public pages (landing / sign-in). */
   locale: 'study-planner-locale',
+  /** Desktop sidebar collapsed state. */
+  sidebarCollapsed: 'study-planner-sidebar-collapsed',
 } as const;
 
 export const IDB = { name: 'rafiq-study-storage', version: 1, store: 'state', key: 'main' } as const;

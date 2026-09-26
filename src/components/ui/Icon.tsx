@@ -104,6 +104,69 @@ const PATHS = {
       <path d="M12 18h.01" />
     </>
   ),
+  home: <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />,
+  settings: <path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4" />,
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  panel: (
+    <>
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M15 3v18" />
+    </>
+  ),
+  logout: <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </>
+  ),
+  refresh: (
+    <>
+      <path d="M21 12a9 9 0 1 1-3-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+    </>
+  ),
+  cloudOff: <path d="m2 2 20 20M5.8 5.8A7 7 0 0 0 9 19h8.5c.9 0 1.7-.2 2.4-.6M22 15.5A4.5 4.5 0 0 0 17.5 10h-1.8A7 7 0 0 0 9.8 5.1" />,
+  circle: <circle cx="12" cy="12" r="9" />,
+  checkCircle: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8.5 12 2.5 2.5 4.5-5" />
+    </>
+  ),
+  pause: (
+    <>
+      <rect x="6" y="4" width="4" height="16" rx="1" />
+      <rect x="14" y="4" width="4" height="16" rx="1" />
+    </>
+  ),
+  stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
+  skip: <path d="m5 4 10 8-10 8zM19 5v14" />,
+  flame: <path d="M12 22c4 0 7-2.7 7-7 0-3.5-2.4-6.2-4.3-8.2-.4-.4-1-.1-1 .4 0 1.8-.7 3.3-2 3.8-.5.2-1-.2-.9-.7.3-2.1-.4-4.4-2.2-6.1-.3-.3-.9-.1-.9.4C7.4 8.4 5 10.3 5 15c0 4.3 3 7 7 7Z" />,
+  trash: <path d="M3 6h18m-2 0-.9 14H5.9L5 6m3 0V4h8v2m-7 4v6m4-6v6" />,
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21a8 8 0 0 1 16 0" />
+    </>
+  ),
+  /** Points "back" in reading order; mirrored automatically in RTL. */
+  chevron: <path d="m15 18-6-6 6-6" />,
+  bell: <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />,
+  file: (
+    <>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
+  coffee: <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4ZM6 2v2M10 2v2M14 2v2" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof PATHS;
@@ -118,7 +181,7 @@ export function Icon({ name, size = 18, className }: { name: IconName; size?: nu
       focusable="false"
       className={cn(
         'inline-block size-[1.15em] shrink-0 fill-none stroke-current stroke-2 align-[-0.2em] [stroke-linecap:round] [stroke-linejoin:round]',
-        name === 'arrow' && 'rtl:-scale-x-100',
+        (name === 'arrow' || name === 'chevron' || name === 'logout') && 'rtl:-scale-x-100',
         className,
       )}
     >

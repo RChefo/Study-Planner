@@ -173,7 +173,9 @@ export async function syncCloudNow(data?: PlannerData): Promise<void> {
       const wait = err instanceof ApiError && err.retryAfter ? err.retryAfter * 1000 : BACKOFF_MS[attempt];
       attempt++;
       patchSync({ status: offline ? 'offline' : 'pending' });
-      if (!offline) scheduleRetry(wait);
+      // Keep retrying on a timer unless the browser itself is offline (then the 'online' event
+      // triggers the retry). A server outage while the browser is online must not stall sync.
+      if (navigator.onLine) scheduleRetry(wait);
       if (previous !== 'offline' && previous !== 'pending') toast('حُفظت التغييرات على هذا الجهاز، وستتم المزامنة تلقائيًا عند توفر الاتصال');
     } else {
       patchSync({ status: 'error' });

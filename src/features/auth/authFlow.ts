@@ -4,7 +4,7 @@ import type { AuthErrorCode } from '@/i18n/messages';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storageKeys';
 import { hasPlannerContent, normalizePlannerData } from '@/lib/plannerData';
 import { ApiError } from '@/services/api';
-import { getConfig, getCurrentUser, logout, signInWithGoogle } from '@/services/auth';
+import { getConfig, getCurrentUser, logout, logoutEverywhere, signInWithGoogle } from '@/services/auth';
 import { fetchPlannerData } from '@/services/plannerApi';
 import { expandCloudData, syncCloudNow } from '@/services/cloudSync';
 import { idbPut, requestPersistentStorage, restoreLocal } from '@/services/localStore';
@@ -165,4 +165,15 @@ export async function signOut(): Promise<void> {
   rememberLocalMode(false);
   patchAuth({ user: null, cloudReady: false, status: 'anonymous', notice: null });
   broadcastSignedOut();
+}
+
+/** Signs out on every device (server revokes all sessions), then locally. */
+export async function signOutEverywhere(): Promise<void> {
+  try {
+    await logoutEverywhere();
+    toast('تم تسجيل الخروج من كل الأجهزة', 'success');
+  } catch {
+    toast('تعذر تسجيل الخروج من الأجهزة الأخرى؛ تم تسجيل خروجك من هذا الجهاز فقط', 'error');
+  }
+  await signOut();
 }
