@@ -14,29 +14,44 @@ export function RequireSession({ children }: { children: ReactNode }) {
   return children;
 }
 
-/** Placeholder in the shape of the app while the session and data load (no blank screen). */
+/** Placeholder in the shape of the shell and the Today page while the session loads. */
 function ShellSkeleton() {
   return (
     <div dir="rtl" className="min-h-dvh bg-paper" role="status" aria-live="polite">
       <span className="sr-only">جارٍ تحميل خطتك الدراسية…</span>
-      <div className="fixed inset-y-0 start-0 hidden w-60 border-e border-line bg-white p-4 lg:block">
-        <Skeleton className="h-8 w-36" />
-        <div className="mt-8 space-y-3">
-          {Array.from({ length: 8 }, (_, i) => (
-            <Skeleton key={i} className="h-7 w-full" />
+      <div className="fixed inset-y-0 start-0 hidden w-60 border-e border-brand-night/[0.07] bg-sidebar px-4 py-5 lg:block">
+        <Skeleton className="h-7 w-36" />
+        <div className="mt-9 space-y-2.5">
+          {Array.from({ length: 7 }, (_, i) => (
+            <Skeleton key={i} className="h-8 w-full rounded-xl" />
           ))}
         </div>
       </div>
       <div className="lg:ps-60">
-        <div className="h-16 border-b border-line" />
-        <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 sm:px-6">
-          <Skeleton className="h-8 w-56" />
-          <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
+        <div className="mx-auto flex h-16 max-w-[1180px] items-center justify-between px-4 sm:px-6 lg:px-10">
+          <Skeleton className="h-10 w-72 rounded-full max-lg:w-8" />
+          <Skeleton className="size-8 rounded-full" />
+        </div>
+        <div className="mx-auto max-w-[1180px] px-4 pt-6 sm:px-6 lg:px-10">
+          <Skeleton className="h-10 w-64" />
+          <Skeleton className="mt-3 h-4 w-80 max-w-full" />
+          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div>
+              <Skeleton className="h-56 rounded-3xl" />
+              <div className="mt-10 space-y-6">
+                {Array.from({ length: 4 }, (_, i) => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-10 flex-1" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4 max-lg:hidden">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-48" />
+            </div>
           </div>
-          <Skeleton className="h-64" />
         </div>
       </div>
     </div>

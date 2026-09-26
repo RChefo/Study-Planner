@@ -167,6 +167,30 @@ const PATHS = {
     </>
   ),
   coffee: <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4ZM6 2v2M10 2v2M14 2v2" />,
+  /** Points "forward" in reading order; mirrored automatically in RTL. */
+  chevronNext: <path d="m9 18 6-6-6-6" />,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
+  more: (
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </>
+  ),
+  mapPin: (
+    <>
+      <path d="M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
+    </>
+  ),
+  maximize: <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />,
+  minimize: <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />,
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof PATHS;
@@ -181,7 +205,7 @@ export function Icon({ name, size = 18, className }: { name: IconName; size?: nu
       focusable="false"
       className={cn(
         'inline-block size-[1.15em] shrink-0 fill-none stroke-current stroke-2 align-[-0.2em] [stroke-linecap:round] [stroke-linejoin:round]',
-        (name === 'arrow' || name === 'chevron' || name === 'logout') && 'rtl:-scale-x-100',
+        (name === 'arrow' || name === 'chevron' || name === 'chevronNext' || name === 'logout') && 'rtl:-scale-x-100',
         className,
       )}
     >

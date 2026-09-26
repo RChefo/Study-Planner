@@ -217,3 +217,23 @@ export function dailyGoal(data: PlannerData): number {
 }
 
 export { addDays, startOfDay };
+
+export type LogPeriod = 'today' | 'week' | 'month' | 'all';
+
+/**
+ * Start of a study-log period. Weeks start on Saturday (the local academic week); months on
+ * the 1st. `null` = no lower bound.
+ */
+export function periodStart(period: LogPeriod, now: number): number | null {
+  const today = startOfDay(now);
+  if (period === 'today') return today;
+  if (period === 'week') return addDays(today, -((new Date(today).getDay() + 1) % 7));
+  if (period === 'month') {
+    const d = new Date(today);
+    d.setDate(1);
+    return d.getTime();
+  }
+  return null;
+}
+
+export const entriesSince = (log: StudyLogEntry[], since: number | null) => (since === null ? log : log.filter(l => l.startedAt >= since));

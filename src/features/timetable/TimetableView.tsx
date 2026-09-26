@@ -1,157 +1,205 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Weekday } from '@/types';
-import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storageKeys';
+import { Button } from '@/components/ui/Button';
+import { EmptyState } from '@/components/ui/Card';
+import { Icon } from '@/components/ui/Icon';
+import { Select } from '@/components/ui/Field';
+import { langOf } from '@/lib/text';
 import { cn } from '@/lib/cn';
-import { DAY_KEYS, DAY_NAMES, GROUPS, getWeekInfo, periodsFor, todayWeekday } from './schedule';
+import { formatTime } from '@/lib/format';
+import { DAY_KEYS, DAY_NAMES, GROUPS, classesFor, getWeekInfo, saveGroup, savedGroup, weekdayOf, type UniClass } from './schedule';
+import { atMinutes } from './classTimes';
 import { CopyScheduleDialog } from './CopyScheduleDialog';
 
-function readSavedGroup(): string {
-  const saved = readLocal(STORAGE_KEYS.timetableGroup) ?? '';
-  return /^[1-8]$/.test(saved) ? saved : '';
-}
-
-/** Re-computes the section week every minute so it flips over on Friday. */
-function useWeekInfo() {
-  const [info, setInfo] = useState(getWeekInfo);
+/** Re-computes the section week and "now" every minute (the week flips on Friday). */
+function useClock() {
+  const [now, setNow] = useState(Date.now);
   useEffect(() => {
-    const id = setInterval(() => setInfo(getWeekInfo()), 60000);
+    const id = setInterval(() => setNow(Date.now()), 60000);
     return () => clearInterval(id);
   }, []);
-  return info;
+  return now;
 }
 
-/** Read-only university timetable with day, group and alternating-section filters. */
-export function TimetableView() {
-  const info = useWeekInfo();
-  const [day, setDay] = useState<Weekday>(todayWeekday);
-  const [group, setGroup] = useState(readSavedGroup);
-  const [copyOpen, setCopyOpen] = useState(false);
-  const periods = periodsFor(day, group, info.section);
+const isNow = (c: UniClass, now: number, today: boolean) => today && !!c.range && atMinutes(now, c.range.start) <= now && now < atMinutes(now, c.range.end);
 
-  const changeGroup = (value: string) => {
-    const next = /^[1-8]$/.test(value) ? value : '';
-    setGroup(next);
-    writeLocal(STORAGE_KEYS.timetableGroup, next || null);
-  };
+function ClassBlock({ c, live, showGroup, compact }: { c: UniClass; live: boolean; showGroup?: boolean; compact?: boolean }) {
+  return (
+    <div className={cn('min-w-0 rounded-xl px-3 py-2.5', live ? 'bg-brand-night text-dawn' : 'bg-brand-soft/70 text-ink')}>
+      {live && <p className="m-0 mb-0.5 text-[11px] font-semibold text-[#8fd6b3]">الآن</p>}
+      <p lang={langOf(c.title)} className={cn('m-0 font-semibold leading-snug [overflow-wrap:anywhere]', compact ? 'text-[13px]' : 'text-[15px]')}>
+        {c.title}
+      </p>
+      <p className={cn('m-0 mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs', live ? 'text-dawn/75' : 'text-subtle')}>
+        {c.room && (
+          <span className="inline-flex items-center gap-1">
+            <Icon name="mapPin" size={12} /> <span lang={langOf(c.room)}>{c.room}</span>
+          </span>
+        )}
+        {c.instructor && <span lang={langOf(c.instructor)}>{c.instructor}</span>}
+        {showGroup && <span>{c.label}</span>}
+      </p>
+      {c.extra.map((s, i) => (
+        <p key={i} lang={langOf(s.title)} className="m-0 mt-2 border-t border-dashed border-current/20 pt-2 text-xs font-semibold [overflow-wrap:anywhere]">
+          {s.title}
+          {s.meta && <span className="block font-normal opacity-75">{s.meta}</span>}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+/** Desktop week: days as columns, time slots as rows, today's column tinted. */
+function WeekGrid({ group, section, now }: { group: string; section: number; now: number }) {
+  const today = weekdayOf(now);
+  const byDay = useMemo(() => Object.fromEntries(DAY_KEYS.map(d => [d, classesFor(d, group, section)])) as Record<Weekday, UniClass[]>, [group, section]);
+  const slots = useMemo(() => {
+    const all = DAY_KEYS.flatMap(d => byDay[d]);
+    return [...new Map(all.map(c => [c.time, c])).values()].sort((a, b) => (a.range?.start ?? 0) - (b.range?.start ?? 0)).map(c => c.time);
+  }, [byDay]);
 
   return (
-    <div className="mx-auto max-w-[1500px] bg-paper p-4 max-sm:p-2">
-      <header className="mb-4 rounded-[18px] bg-hero px-6 py-5 text-right max-sm:rounded-[14px] max-sm:p-[13px]">
-        <h1 className="mb-[5px] mt-0 text-[19px] font-bold max-sm:text-sm">جامعة حلوان التكنولوجية الدولية — كلية تكنولوجيا الصناعة والطاقة بالقاهرة</h1>
-        <h2 className="mb-[5px] mt-0 text-base font-semibold text-brand max-sm:text-xs">تكنولوجيا الأمن السيبراني · الفصل الدراسي الأول 2026/2027</h2>
-        <h3 className="m-0 text-[13px] font-medium text-muted">الفرقة الثالثة · اختار اليوم لعرض المحاضرات ومجموعاتها</h3>
-      </header>
-
-      <div className="mb-3 flex items-center justify-between gap-3 rounded-[14px] border border-line bg-white px-[15px] py-3 shadow-card max-sm:px-3 max-sm:py-[10px]">
-        <div className="flex flex-col gap-0.5">
-          <small className="text-[11px] text-muted">التناوب الأسبوعي التلقائي</small>
-          <strong className="text-sm text-brand max-sm:text-[13px]">أسبوع {info.section}</strong>
-        </div>
-        <span className="whitespace-nowrap text-[11px] text-muted max-sm:text-[10px]">{info.label}</span>
-      </div>
-
-      <div className="mb-[10px] flex items-center gap-[10px] rounded-xl border border-line bg-white px-[13px] py-[10px] max-sm:flex-wrap max-sm:justify-between max-sm:px-[11px] max-sm:py-[9px]">
-        <label htmlFor="groupSelect" className="text-xs font-semibold text-muted">
-          عرض المجموعة
-        </label>
-        <select
-          id="groupSelect"
-          value={group}
-          onChange={e => changeGroup(e.target.value)}
-          className="min-w-[150px] rounded-[9px] border border-line bg-stripe px-[10px] py-[7px] text-xs text-ink outline-brand max-sm:min-w-[130px]"
-        >
-          <option value="">كل المجموعات</option>
-          {GROUPS.map(n => (
-            <option key={n} value={n}>
-              المجموعة {n}
-            </option>
+    <div className="overflow-hidden rounded-2xl border border-line bg-white max-lg:hidden">
+      <div role="table" aria-label="جدول الأسبوع" className="grid" style={{ gridTemplateColumns: `6.5rem repeat(${DAY_KEYS.length}, minmax(0, 1fr))` }}>
+        <div role="row" className="contents">
+          <span role="columnheader" className="border-b border-line px-4 py-3 text-xs text-muted">
+            الوقت
+          </span>
+          {DAY_KEYS.map(d => (
+            <span role="columnheader" key={d} className={cn('border-b border-s border-line px-4 py-3 text-sm font-semibold', d === today ? 'bg-brand-soft/60 text-brand-night' : 'text-ink')}>
+              {DAY_NAMES[d]}
+              {d === today && <span className="ms-2 rounded-full bg-brand px-2 py-0.5 text-[11px] text-white">اليوم</span>}
+            </span>
           ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => setCopyOpen(true)}
-          className="mr-auto rounded-[9px] border-0 bg-brand px-3 py-2 text-xs font-semibold text-white max-sm:mr-0"
-        >
-          نسخ الجدول
-        </button>
-      </div>
-
-      <nav className="mb-1.5 flex gap-2 overflow-x-auto px-px pb-[10px] pt-0.5" aria-label="اختيار اليوم">
-        {DAY_KEYS.map(key => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={key === day}
-            onClick={() => setDay(key)}
-            className={cn(
-              'flex-none rounded-[11px] border px-[17px] py-[9px] text-[13px] transition max-sm:px-[13px] max-sm:py-2 max-sm:text-xs',
-              key === day
-                ? 'border-brand bg-brand text-white shadow-[0_5px_14px_#286b5626]'
-                : 'border-line bg-white text-muted hover:border-[#a9cbb8] hover:text-brand',
-            )}
-          >
-            {DAY_NAMES[key]}
-          </button>
-        ))}
-      </nav>
-
-      <div className="mx-0.5 mb-3 flex items-center justify-between">
-        <h2 className="m-0 text-[17px] font-bold max-sm:text-[15px]">جدول {DAY_NAMES[day]}</h2>
-        <span className="rounded-[20px] bg-mint px-[10px] py-[5px] text-xs text-brand">{periods.length} فترات دراسية</span>
-      </div>
-
-      {periods.length ? (
-        <div className="grid gap-[10px]">
-          {periods.map(p => (
-            <article key={p.period} className="rounded-[15px] border border-line bg-white px-[15px] py-[13px] shadow-card max-sm:rounded-[13px] max-sm:p-[11px]">
-              <div className="mb-[10px] flex items-center justify-between gap-[10px]">
-                <span className="text-[13px] font-bold text-brand">الفترة {p.period}</span>
-                <span className="rounded-lg bg-[#f0f5f1] px-[9px] py-[5px] text-xs text-muted" dir="ltr">
-                  {p.time}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 max-sm:grid-cols-1">
-                {p.classes.map(cls => (
-                  <article key={cls.key} className="min-w-0 rounded-[11px] border border-[#edf0ed] bg-stripe px-[11px] py-[10px] max-sm:p-[9px]">
-                    <span className="mb-1.5 inline-block rounded-[20px] bg-mint px-2 py-[3px] text-[10px] font-bold text-brand">{cls.label}</span>
-                    {cls.subjects.map((s, i) => (
-                      <div key={i}>
-                        <span
-                          className={cn(
-                            'block text-xs font-bold leading-[1.5] text-ink [overflow-wrap:anywhere]',
-                            s.secondary && 'mt-[7px] border-t border-dashed border-[#dce5df] pt-1.5',
-                          )}
-                        >
-                          {s.title}
-                        </span>
-                        {s.meta && <span className="mt-0.5 block text-[10px] font-medium leading-[1.5] text-muted [overflow-wrap:anywhere]">{s.meta}</span>}
-                      </div>
+        </div>
+        {slots.map(slot => {
+          const sample = DAY_KEYS.flatMap(d => byDay[d]).find(c => c.time === slot)!;
+          return (
+            <div role="row" key={slot} className="contents">
+              <span role="rowheader" className="border-t border-line px-4 py-3 text-[13px] tabular-nums text-subtle first-of-type:border-t-0">
+                {sample.range ? formatTime(atMinutes(now, sample.range.start)) : slot}
+              </span>
+              {DAY_KEYS.map(d => {
+                const here = byDay[d].filter(c => c.time === slot);
+                return (
+                  <div role="cell" key={d} className={cn('grid content-start gap-1.5 border-s border-t border-line p-1.5', d === today && 'bg-brand-soft/30')}>
+                    {here.map(c => (
+                      <ClassBlock key={c.key} c={c} live={isNow(c, now, d === today)} compact />
                     ))}
-                  </article>
-                ))}
-              </div>
-            </article>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** One day at a time: chips to switch days, classes on a time rail. */
+function DayView({ group, section, now, desktopToo }: { group: string; section: number; now: number; desktopToo: boolean }) {
+  const today = weekdayOf(now);
+  const [day, setDay] = useState<Weekday>(today ?? DAY_KEYS[0]);
+  const classes = classesFor(day, group, section);
+  const index = DAY_KEYS.indexOf(day);
+
+  return (
+    <div className={cn(!desktopToo && 'lg:hidden')}>
+      <div className="mb-6 flex items-center gap-2">
+        <Button size="icon" variant="ghost" aria-label="اليوم السابق" disabled={index === 0} onClick={() => setDay(DAY_KEYS[index - 1])}>
+          <Icon name="chevron" size={18} />
+        </Button>
+        <div role="tablist" aria-label="اختيار اليوم" className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto">
+          {DAY_KEYS.map(d => (
+            <button
+              key={d}
+              type="button"
+              role="tab"
+              aria-selected={d === day}
+              onClick={() => setDay(d)}
+              className={cn('relative shrink-0 rounded-full px-3.5 py-2 text-sm transition-colors sm:px-4', d === day ? 'bg-brand-night font-semibold text-dawn' : 'text-subtle hover:bg-ink/5 hover:text-ink')}
+            >
+              {DAY_NAMES[d]}
+              {d === today && <span aria-label="(اليوم)" className={cn('absolute end-1.5 top-1.5 size-1.5 rounded-full', d === day ? 'bg-[#8fd6b3]' : 'bg-brand')} />}
+            </button>
           ))}
         </div>
-      ) : (
-        <div className="rounded-[15px] border border-dashed border-[#cfd9d2] bg-white px-[15px] py-7 text-center text-[13px] text-muted">
-          لا توجد محاضرات مسجلة لهذا اليوم.
-        </div>
-      )}
-
-      <div className="mt-3 rounded-[13px] border border-line bg-white px-[15px] py-3 text-center text-xs text-muted">
-        <span className="mx-[10px] my-[3px] inline-block">
-          <span className="font-bold text-brand">(1)</span> = محاضرة المجموعة الأولى
-        </span>
-        <span className="mx-[10px] my-[3px] inline-block">
-          <span className="font-bold text-brand">(2)</span> = محاضرة المجموعة الثانية
-        </span>
-        <span className="mx-[10px] my-[3px] inline-block">
-          <span className="font-bold text-brand">(1&amp;2)</span> = محاضرة مشتركة للمجموعتين
-        </span>
+        <Button size="icon" variant="ghost" aria-label="اليوم التالي" disabled={index === DAY_KEYS.length - 1} onClick={() => setDay(DAY_KEYS[index + 1])}>
+          <Icon name="chevronNext" size={18} />
+        </Button>
       </div>
 
-      {copyOpen && <CopyScheduleDialog onClose={() => setCopyOpen(false)} initialDay={day} initialGroup={group} />}
+      {classes.length ? (
+        <ol role="tabpanel" aria-label={`محاضرات ${DAY_NAMES[day]}`} className="relative m-0 list-none space-y-4 p-0">
+          {classes.map(c => (
+            <li key={c.key} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-4">
+              <span className="pt-2.5 text-end text-[13px] tabular-nums leading-tight text-subtle">
+                {c.range ? formatTime(atMinutes(now, c.range.start)) : c.time}
+                {c.range && <span className="block text-[11px] text-muted">{formatTime(atMinutes(now, c.range.end))}</span>}
+              </span>
+              <ClassBlock c={c} live={isNow(c, now, day === today)} showGroup={!group} />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <EmptyState icon="calendar" title={`لا محاضرات يوم ${DAY_NAMES[day]}`} description={group ? 'يوم خالٍ لمجموعتك؛ مناسب للمذاكرة.' : undefined} />
+      )}
+    </div>
+  );
+}
+
+/** Read-only university timetable, integrated with the app's typography and colours. */
+export function TimetableView({ header }: { header?: (controls: ReactNode) => ReactNode }) {
+  const now = useClock();
+  const info = useMemo(() => getWeekInfo(new Date(now)), [now]);
+  const [group, setGroup] = useState(savedGroup);
+  const [copyOpen, setCopyOpen] = useState(false);
+
+  const controls = (
+    <div className="flex flex-wrap items-center gap-2">
+      <label className="sr-only" htmlFor="tt-group">
+        مجموعتك
+      </label>
+      <Select
+        id="tt-group"
+        value={group}
+        onChange={e => {
+          setGroup(e.target.value);
+          saveGroup(e.target.value);
+        }}
+        className="w-auto! rounded-full py-2 ps-4"
+      >
+        <option value="">كل المجموعات</option>
+        {GROUPS.map(n => (
+          <option key={n} value={n}>
+            المجموعة {n}
+          </option>
+        ))}
+      </Select>
+      <Button onClick={() => setCopyOpen(true)}>
+        <Icon name="clipboard" size={15} /> نسخ كنص
+      </Button>
+    </div>
+  );
+
+  return (
+    <div>
+      {header?.(controls)}
+      <p className="m-0 mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-subtle">
+        <span className="rounded-full bg-mint px-3 py-1 font-semibold text-brand-deep">أسبوع {info.section}</span>
+        <span>{info.label} · يتبدّل التناوب تلقائيًا كل جمعة</span>
+        {!group && <span className="text-brand">اختر مجموعتك لعرض جدولك الأسبوعي كاملًا.</span>}
+      </p>
+
+      {group && <WeekGrid group={group} section={info.section} now={now} />}
+      <DayView group={group} section={info.section} now={now} desktopToo={!group} />
+
+      <p className="m-0 mt-8 text-xs leading-relaxed text-muted">
+        (1) محاضرة المجموعة الأولى · (2) محاضرة المجموعة الثانية · (1&amp;2) مشتركة للمجموعتين — تظهر حسب أسبوع التناوب الحالي.
+      </p>
+
+      {copyOpen && <CopyScheduleDialog onClose={() => setCopyOpen(false)} initialDay={weekdayOf(now) ?? DAY_KEYS[0]} initialGroup={group} />}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { DAY_MS, dayKey } from '@/features/insights/selectors';
 const LOCALE = 'ar-EG-u-nu-latn';
 
 /** Arabic count phrase with dual/plural forms: 1 يوم، يومان، 3 أيام، 11 يومًا. */
-function arabicCount(n: number, one: string, two: string, few: string, many: string): string {
+export function arabicCount(n: number, one: string, two: string, few: string, many: string): string {
   if (n === 1) return one;
   if (n === 2) return two;
   if (n >= 3 && n <= 10) return `${n} ${few}`;
@@ -65,3 +65,9 @@ export function greeting(now: number): string {
   if (h < 12) return 'صباح الخير';
   return 'مساء الخير';
 }
+
+/** "محاضرة" · "محاضرتان" · "3 محاضرات" · "11 محاضرة". */
+export const lecturesPhrase = (n: number) => arabicCount(n, 'محاضرة', 'محاضرتان', 'محاضرات', 'محاضرة');
+export const roundsPhrase = (n: number) => arabicCount(n, 'جولة', 'جولتان', 'جولات', 'جولة');
+export const coursesPhrase = (n: number) => arabicCount(n, 'مادة', 'مادتان', 'مواد', 'مادة');
+export const tasksPhrase = (n: number) => arabicCount(n, 'التزام', 'التزامان', 'التزامات', 'التزامًا');

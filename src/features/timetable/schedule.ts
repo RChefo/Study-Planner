@@ -1,5 +1,7 @@
 import type { TimetableCell, TimetableSubject, Weekday } from '@/types';
 import { TIMETABLE } from './timetableData';
+import { parseTimeRange, splitMeta, type ClockRange } from './classTimes';
+import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storageKeys';
 
 export const DAY_NAMES: Record<Weekday, string> = {
   Friday: 'الجمعة',
@@ -33,13 +35,12 @@ export function getWeekInfo(date = new Date()): WeekInfo {
   const weekIndex = Math.floor((fridayUtc - SECTION_ANCHOR) / 604800000);
   const section = ((((weekIndex % 2) + 2) % 2) + 1) as 1 | 2;
   const thursday = new Date(friday.getFullYear(), friday.getMonth(), friday.getDate() + 6);
-  const fmt = (d: Date) => new Intl.DateTimeFormat('ar-EG', { day: 'numeric', month: 'short' }).format(d);
+  const fmt = (d: Date) => new Intl.DateTimeFormat('ar-EG-u-nu-latn', { day: 'numeric', month: 'short' }).format(d);
   return { section, label: `من ${fmt(friday)} إلى ${fmt(thursday)}` };
 }
 
 export function todayWeekday(): Weekday {
-  const name = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date()) as Weekday;
-  return DAY_KEYS.includes(name) ? name : DAY_KEYS[0];
+  return weekdayOf(Date.now()) ?? DAY_KEYS[0];
 }
 
 export interface VisibleSubject extends TimetableSubject {
@@ -134,4 +135,46 @@ export function buildScheduleText(selectedGroups: number[] | null, selectedDays:
     if (dayLines.length) lines.push(DAY_NAMES[day], ...dayLines, '');
   });
   return lines.join('\n').trim();
+}
+
+/** The timetable's English weekday key for a timestamp (null on days without classes). */
+export function weekdayOf(ts: number): Weekday | null {
+  const name = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(ts) as Weekday;
+  return DAY_KEYS.includes(name) ? name : null;
+}
+
+/** One class as shown in the app: parsed times plus instructor/room split out of `meta`. */
+export interface UniClass {
+  key: string;
+  period: number;
+  time: string;
+  range: ClockRange | null;
+  title: string;
+  instructor: string;
+  room: string;
+  /** Group label ("المجموعة 2" / "المجموعات 1–4"). */
+  label: string;
+  /** Other subjects sharing the slot (rare: two classes in one cell). */
+  extra: VisibleSubject[];
+}
+
+/** Flattened classes for a day/group/section week, in period order. */
+export function classesFor(day: Weekday, group: string, section: number): UniClass[] {
+  return periodsFor(day, group, section).flatMap(p =>
+    p.classes.map(cls => {
+      const [first, ...extra] = cls.subjects;
+      const { instructor, room } = splitMeta(first.meta);
+      return { key: cls.key, period: p.period, time: p.time, range: parseTimeRange(p.time), title: first.title, instructor, room, label: cls.label, extra };
+    }),
+  );
+}
+
+/** The student's group (1–8) saved on this device, or '' for all groups. */
+export function savedGroup(): string {
+  const saved = readLocal(STORAGE_KEYS.timetableGroup) ?? '';
+  return /^[1-8]$/.test(saved) ? saved : '';
+}
+
+export function saveGroup(group: string): void {
+  writeLocal(STORAGE_KEYS.timetableGroup, /^[1-8]$/.test(group) ? group : null);
 }

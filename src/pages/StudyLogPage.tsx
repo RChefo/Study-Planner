@@ -1,109 +1,170 @@
 import { useMemo, useState } from 'react';
 import { Button, ButtonLink } from '@/components/ui/Button';
-import { Card, EmptyState, PageHeader, StatTile, StatusChip } from '@/components/ui/Card';
-import { Select } from '@/components/ui/Field';
+import { EmptyState, PageHeader, SectionHeader } from '@/components/ui/Card';
 import { Icon } from '@/components/ui/Icon';
+import { Segmented } from '@/components/ui/Segmented';
 import { useMinuteNow } from '@/features/insights/hooks';
-import { dayKey, sumMinutes } from '@/features/insights/selectors';
-import { formatLongDay, formatMinutes, formatTime, relativeDay } from '@/lib/format';
+import { dayKey, entriesSince, minutesBySubject, periodStart, sumMinutes, type LogPeriod } from '@/features/insights/selectors';
+import { formatLongDay, formatMinutes, formatTime, relativeDay, roundsPhrase } from '@/lib/format';
+import { langOf } from '@/lib/text';
+import { cn } from '@/lib/cn';
 import { usePlannerStore } from '@/stores/plannerStore';
 import { ROUTES } from '@/routes/paths';
 
-const PAGE = 50;
+const PAGE = 40;
+const PERIODS = [
+  ['today', 'اليوم'],
+  ['week', 'هذا الأسبوع'],
+  ['month', 'هذا الشهر'],
+  ['all', 'الكل'],
+] as const;
+const PERIOD_PHRASE: Record<LogPeriod, string> = { today: 'اليوم', week: 'هذا الأسبوع', month: 'هذا الشهر', all: 'منذ البداية' };
 
+/** A meaningful history: how much, on what, then every round in order. */
 export function StudyLogPage() {
   const log = usePlannerStore(s => s.data.studyLog);
   const now = useMinuteNow();
-  const [subject, setSubject] = useState('');
+  const [period, setPeriod] = useState<LogPeriod>('week');
+  const [subject, setSubject] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
 
-  const subjects = useMemo(() => [...new Set(log.map(l => l.subject).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ar')), [log]);
-  const filtered = useMemo(() => [...log].filter(l => !subject || l.subject === subject).sort((a, b) => b.startedAt - a.startedAt), [log, subject]);
-  const visible = filtered.slice(0, limit);
-
-  // Group the visible page by calendar day.
-  const groups = useMemo(() => {
-    const map = new Map<string, typeof visible>();
-    for (const l of visible) {
-      const key = dayKey(l.startedAt);
-      map.set(key, [...(map.get(key) ?? []), l]);
-    }
+  const inPeriod = useMemo(() => entriesSince(log, periodStart(period, now)), [log, period, now]);
+  const bySubject = useMemo(() => minutesBySubject(inPeriod), [inPeriod]);
+  const total = sumMinutes(inPeriod);
+  const completed = inPeriod.filter(l => l.completed).length;
+  const entries = useMemo(() => inPeriod.filter(l => !subject || l.subject === subject).sort((a, b) => b.startedAt - a.startedAt), [inPeriod, subject]);
+  const days = useMemo(() => {
+    const map = new Map<string, typeof entries>();
+    for (const l of entries.slice(0, limit)) map.set(dayKey(l.startedAt), [...(map.get(dayKey(l.startedAt)) ?? []), l]);
     return [...map.entries()];
-  }, [visible]);
+  }, [entries, limit]);
+  const max = Math.max(1, ...bySubject.map(s => s.minutes));
 
-  const total = sumMinutes(filtered);
-  const completed = filtered.filter(l => l.completed).length;
+  const startLink = (
+    <ButtonLink to={ROUTES.timer} variant="primary" size="lg">
+      <Icon name="timer" size={16} /> ابدأ جولة
+    </ButtonLink>
+  );
+
+  if (!log.length) {
+    return (
+      <div>
+        <PageHeader title="سجل المذاكرة" description="كل جولة تركيز تنهيها تُحفظ هنا تلقائيًا." />
+        <EmptyState icon="history" title="لا جلسات مذاكرة بعد" description="ابدأ جولة تركيز من المؤقت أو من أي محاضرة، وستظهر هنا." action={startLink} />
+      </div>
+    );
+  }
 
   return (
     <div>
-      <PageHeader title="سجل المذاكرة" description="كل جولة تركيز مكتملة أو محفوظة عند إيقاف المؤقت." actions={<ButtonLink to={ROUTES.timer} variant="primary"><Icon name="timer" size={16} /> ابدأ جولة</ButtonLink>} />
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatTile label="الجلسات" value={filtered.length} icon="history" />
-        <StatTile label="الوقت الكلي" value={formatMinutes(total)} icon="clock" />
-        <StatTile label="متوسط الجلسة" value={formatMinutes(filtered.length ? total / filtered.length : 0)} icon="timer" />
-        <StatTile label="جولات مكتملة" value={filtered.length ? `${Math.round((completed / filtered.length) * 100)}%` : '—'} icon="checkCircle" note={`${completed} من ${filtered.length}`} />
-      </div>
-      <Card>
-        {subjects.length > 1 && (
-          <div className="flex items-center gap-2 border-b border-line p-3">
-            <label htmlFor="log-subject" className="text-[13px] text-subtle">
-              المادة
-            </label>
-            <Select
-              id="log-subject"
-              value={subject}
-              onChange={e => {
-                setSubject(e.target.value);
-                setLimit(PAGE);
-              }}
-              className="w-auto min-w-44"
-            >
-              <option value="">كل المواد</option>
-              {subjects.map(s => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </Select>
+      <PageHeader title="سجل المذاكرة" description="كل جولة تركيز تنهيها تُحفظ هنا تلقائيًا." actions={startLink} />
+      <Segmented
+        label="الفترة"
+        value={period}
+        options={PERIODS}
+        onChange={p => {
+          setPeriod(p);
+          setSubject(null);
+          setLimit(PAGE);
+        }}
+        className="mb-8"
+      />
+
+      {/* Summary: one big number, then where the time went (click a subject to filter). */}
+      <section aria-label="ملخص الفترة" className="mb-12 grid gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
+        <div>
+          <p className="m-0 text-[13px] text-subtle">مذاكرة {PERIOD_PHRASE[period]}</p>
+          <p className="m-0 mt-1 text-5xl font-semibold tracking-tight text-ink">{formatMinutes(total)}</p>
+          <p className="m-0 mt-2 text-[13px] text-subtle">
+            {inPeriod.length ? `${inPeriod.length === 1 ? 'جولة واحدة' : roundsPhrase(inPeriod.length)} · ${completed} مكتملة حتى النهاية` : 'لا جولات في هذه الفترة'}
+          </p>
+        </div>
+        {bySubject.length > 0 && (
+          <div>
+            <p className="m-0 mb-3 text-[13px] text-subtle">حسب المادة</p>
+            <ul className="m-0 list-none space-y-1 p-0">
+              {bySubject.map(s => {
+                const on = subject === s.subject;
+                return (
+                  <li key={s.subject}>
+                    <button
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setSubject(on ? null : s.subject)}
+                      className={cn('grid w-full grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-4 rounded-lg px-2 py-1.5 text-start text-sm transition-colors max-sm:grid-cols-[minmax(0,6rem)_1fr_auto]', on ? 'bg-brand-soft' : 'hover:bg-white')}
+                    >
+                      <span lang={langOf(s.subject)} className={cn('truncate', on ? 'font-semibold text-brand-night' : 'text-ink')}>
+                        {s.subject}
+                      </span>
+                      <span aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-[#e3e9e2]">
+                        <span className="block h-full origin-left rounded-full bg-brand motion-safe:animate-grow rtl:origin-right" style={{ width: `${Math.max(3, (s.minutes / max) * 100)}%` }} />
+                      </span>
+                      <span className="tabular-nums text-subtle">{formatMinutes(s.minutes)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         )}
-        {!filtered.length ? (
-          <EmptyState icon="history" title="لم تسجل جلسات بعد" description="ابدأ جولة تركيز من المؤقت أو من أي محاضرة، وستظهر هنا تلقائيًا." action={<ButtonLink to={ROUTES.timer} variant="primary" size="sm">فتح المؤقت</ButtonLink>} />
+      </section>
+
+      <section aria-labelledby="log-timeline" className="max-w-3xl">
+        <SectionHeader
+          id="log-timeline"
+          title="الجولات"
+          count={entries.length}
+          action={
+            subject ? (
+              <button type="button" onClick={() => setSubject(null)} className="inline-flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1 text-[13px] text-brand-night">
+                <span lang={langOf(subject)}>{subject}</span> <Icon name="close" size={13} />
+                <span className="sr-only">إلغاء التصفية</span>
+              </button>
+            ) : undefined
+          }
+          className="mb-6"
+        />
+        {!entries.length ? (
+          <EmptyState icon="history" title="لا جولات في هذه الفترة" description="جرّب فترة أطول، أو ابدأ جولة الآن." />
         ) : (
-          <>
-            {groups.map(([key, entries]) => (
-              <section key={key} aria-labelledby={`day-${key}`}>
-                <h2 id={`day-${key}`} className="m-0 flex items-center justify-between border-b border-line bg-stripe px-4 py-1.5 text-xs font-semibold text-subtle">
-                  <span>
-                    {relativeDay(entries[0].startedAt, now)} · {formatLongDay(entries[0].startedAt)}
+          <div className="space-y-10">
+            {days.map(([key, list]) => (
+              <div key={key}>
+                <h3 className="m-0 mb-4 flex items-baseline justify-between gap-3 text-sm">
+                  <span className="font-semibold text-ink">
+                    {relativeDay(list[0].startedAt, now)} <span className="font-normal text-subtle">· {formatLongDay(list[0].startedAt)}</span>
                   </span>
-                  <span className="tabular-nums">{formatMinutes(sumMinutes(entries))}</span>
-                </h2>
-                <ul className="m-0 list-none divide-y divide-line p-0">
-                  {entries.map(l => (
-                    <li key={l.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                      <span className="w-16 shrink-0 text-xs tabular-nums text-subtle">{formatTime(l.startedAt)}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="m-0 truncate font-medium text-ink">{l.subject}</p>
-                        <p className="m-0 truncate text-xs text-subtle">{l.topic}</p>
+                  <span className="tabular-nums text-subtle">{formatMinutes(sumMinutes(list))}</span>
+                </h3>
+                <ol className="relative m-0 list-none space-y-5 p-0">
+                  <span aria-hidden="true" className="absolute inset-y-2 start-[calc(4rem+1rem+0.5rem-0.5px)] w-px bg-[#dfe5de]" />
+                  {list.map(l => (
+                    <li key={l.id} className="relative grid grid-cols-[4rem_1rem_minmax(0,1fr)_auto] items-start gap-x-4">
+                      <time dateTime={new Date(l.startedAt).toISOString()} className="pt-0.5 text-end text-[13px] tabular-nums text-subtle">
+                        {formatTime(l.startedAt)}
+                      </time>
+                      <span className={cn('mt-1.5 size-3 justify-self-center rounded-full ring-4 ring-paper', l.completed ? 'bg-brand' : 'bg-accent')} />
+                      <div className="min-w-0">
+                        <p lang={langOf(l.subject)} className="m-0 truncate text-[15px] font-semibold text-ink">
+                          {l.subject}
+                        </p>
+                        <p className="m-0 mt-0.5 truncate text-[13px] text-subtle">
+                          <span lang={langOf(l.topic)}>{l.topic}</span>
+                          {!l.completed && <span className="text-[#7c4e0e]"> · أُوقفت مبكرًا</span>}
+                        </p>
                       </div>
-                      <StatusChip tone={l.completed ? 'done' : 'progress'} icon={l.completed ? 'checkCircle' : 'clock'}>
-                        {l.completed ? 'مكتملة' : 'أُوقفت مبكرًا'}
-                      </StatusChip>
-                      <span className="w-14 shrink-0 text-end text-xs tabular-nums text-ink">{formatMinutes(l.duration)}</span>
+                      <span className="pt-0.5 text-sm tabular-nums text-ink">{formatMinutes(l.duration)}</span>
                     </li>
                   ))}
-                </ul>
-              </section>
-            ))}
-            {filtered.length > limit && (
-              <div className="flex justify-center border-t border-line p-3">
-                <Button onClick={() => setLimit(l => l + PAGE)}>عرض المزيد ({filtered.length - limit} متبقية)</Button>
+                </ol>
               </div>
+            ))}
+            {entries.length > limit && (
+              <Button onClick={() => setLimit(l => l + PAGE)}>عرض المزيد ({entries.length - limit})</Button>
             )}
-          </>
+          </div>
         )}
-      </Card>
+      </section>
     </div>
   );
 }

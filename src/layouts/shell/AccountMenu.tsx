@@ -56,8 +56,8 @@ export function AccountMenu() {
 
   if (local && !user) {
     return (
-      <Link to={loginPath({ next: ROUTES.app })} className={buttonStyles('primary', 'sm', 'no-underline')}>
-        <Icon name="user" size={15} /> تسجيل الدخول
+      <Link to={loginPath({ next: ROUTES.app })} aria-label="تسجيل الدخول لمزامنة بياناتك" className={buttonStyles('secondary', 'sm', 'no-underline max-sm:w-8 max-sm:px-0')}>
+        <Icon name="user" size={15} /> <span className="max-sm:hidden">تسجيل الدخول</span>
       </Link>
     );
   }
