@@ -19,15 +19,8 @@ function ShellSkeleton() {
   return (
     <div dir="rtl" className="min-h-dvh bg-paper" role="status" aria-live="polite">
       <span className="sr-only">جارٍ تحميل خطتك الدراسية…</span>
-      <div className="fixed inset-y-0 start-0 hidden w-60 border-e border-brand-night/[0.07] bg-sidebar px-4 py-5 lg:block">
-        <Skeleton className="h-7 w-36" />
-        <div className="mt-9 space-y-2.5">
-          {Array.from({ length: 7 }, (_, i) => (
-            <Skeleton key={i} className="h-8 w-full rounded-xl" />
-          ))}
-        </div>
-      </div>
-      <div className="lg:ps-60">
+      <div className="fixed inset-y-3 start-3 hidden w-[76px] rounded-[26px] bg-brand-night lg:block" />
+      <div className="lg:ps-[88px]">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center justify-between px-4 sm:px-6 lg:px-10">
           <Skeleton className="h-10 w-72 rounded-full max-lg:w-8" />
           <Skeleton className="size-8 rounded-full" />

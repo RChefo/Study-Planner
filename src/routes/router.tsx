@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
       {
         errorElement: <RouteError inline />,
         children: [
-          { index: true, ...page('الرئيسية', async () => ({ Component: (await import('@/pages/DashboardPage')).DashboardPage })) },
+          { index: true, ...page('اليوم', async () => ({ Component: (await import('@/pages/DashboardPage')).DashboardPage })) },
           { path: ROUTES.courses, ...page('المواد', async () => ({ Component: (await import('@/pages/CoursesPage')).CoursesPage })) },
           { path: `${ROUTES.courses}/:courseId`, ...page('المادة', async () => ({ Component: (await import('@/pages/CourseDetailPage')).CourseDetailPage })) },
           { path: ROUTES.timetable, ...page('الجدول', async () => ({ Component: (await import('@/pages/TimetablePage')).TimetablePage })) },

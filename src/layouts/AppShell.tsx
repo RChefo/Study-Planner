@@ -12,7 +12,6 @@ import { cn } from '@/lib/cn';
 import { Sidebar } from './shell/Sidebar';
 import { AccountMenu } from './shell/AccountMenu';
 import { SyncIndicator } from './shell/SyncIndicator';
-import { TimerChip } from './shell/TimerChip';
 import { MobileNav } from './shell/MobileNav';
 
 function usePageTitle(): string {
@@ -30,6 +29,19 @@ function RouteProgress() {
       <div className="h-full w-1/3 bg-brand motion-safe:animate-[route-progress_1.1s_ease-in-out_infinite]" />
     </div>
   );
+}
+
+/** True while the viewport is at least `px` wide (tracks resizes). */
+function useMinWidth(px: number): boolean {
+  const query = `(min-width: ${px}px)`;
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = () => setMatch(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [query]);
+  return match;
 }
 
 /** Opens the command palette on Ctrl/⌘+K, or "/" when not typing in a field. */
@@ -60,7 +72,10 @@ export function AppShell() {
   useTimerEngine();
   const title = usePageTitle();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(() => readLocal(STORAGE_KEYS.sidebarCollapsed) === '1');
+  const [expanded, setExpanded] = useState(() => readLocal(STORAGE_KEYS.navExpanded) === '1');
+  // Labels need room: the rail stays compact below 1280px whatever the preference.
+  const roomy = useMinWidth(1280);
+  const showLabels = expanded && roomy;
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const mainRef = useRef<HTMLElement>(null);
@@ -76,10 +91,10 @@ export function AppShell() {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
-  const toggleCollapsed = () =>
-    setCollapsed(c => {
-      writeLocal(STORAGE_KEYS.sidebarCollapsed, c ? null : '1');
-      return !c;
+  const toggleExpanded = () =>
+    setExpanded(e => {
+      writeLocal(STORAGE_KEYS.navExpanded, e ? null : '1');
+      return !e;
     });
 
   return (
@@ -89,11 +104,17 @@ export function AppShell() {
       </a>
       <RouteProgress />
 
-      <aside className={cn('fixed inset-y-0 start-0 z-30 hidden border-e border-brand-night/[0.07] bg-sidebar transition-[width] duration-300 ease-out lg:block', collapsed ? 'w-[72px]' : 'w-60')}>
-        <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
+      {/* Desktop: a floating rail inset from the edge; labels only when the student opts in (xl+). */}
+      <aside
+        className={cn(
+          'fixed inset-y-3 start-3 z-30 hidden rounded-[26px] bg-brand-night shadow-[0_18px_40px_-24px_#0c2f26] transition-[width] duration-300 ease-out motion-reduce:transition-none lg:block',
+          showLabels ? 'w-[228px]' : 'w-[76px]',
+        )}
+      >
+        <Sidebar expanded={showLabels} onToggleExpanded={toggleExpanded} />
       </aside>
 
-      <div className={cn('flex min-h-dvh flex-col transition-[padding] duration-300 ease-out', collapsed ? 'lg:ps-[72px]' : 'lg:ps-60')}>
+      <div className={cn('flex min-h-dvh flex-col transition-[padding] duration-300 ease-out motion-reduce:transition-none', showLabels ? 'lg:ps-[240px]' : 'lg:ps-[88px]')}>
         <header className="sticky top-0 z-20 bg-paper/85 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:px-10">
             <NavLink to={ROUTES.app} end className="rounded-lg lg:hidden" aria-label="Study Planner — الرئيسية">
@@ -121,12 +142,6 @@ export function AppShell() {
               <button type="button" onClick={openSearch} aria-label="بحث" className="grid size-9 place-items-center rounded-full text-subtle hover:bg-ink/5 hover:text-ink lg:hidden">
                 <Icon name="search" size={19} />
               </button>
-              <span className="max-sm:hidden">
-                <TimerChip />
-              </span>
-              <span className="sm:hidden">
-                <TimerChip compact />
-              </span>
               <span className="max-lg:hidden">
                 <SyncIndicator compact />
               </span>

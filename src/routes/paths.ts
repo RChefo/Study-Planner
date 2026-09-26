@@ -40,7 +40,7 @@ export interface NavItem {
 
 /** Primary sections. The timer lives in the top bar (focus control), not in this list. */
 export const NAV_ITEMS: NavItem[] = [
-  { to: ROUTES.app, label: 'الرئيسية', icon: 'home', end: true },
+  { to: ROUTES.app, label: 'اليوم', icon: 'home', end: true },
   { to: ROUTES.courses, label: 'المواد', icon: 'book' },
   { to: ROUTES.timetable, label: 'الجدول', icon: 'calendar' },
   { to: ROUTES.commitments, label: 'الالتزامات', icon: 'clipboard' },
