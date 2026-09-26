@@ -35,7 +35,10 @@ if (process.env.NODE_ENV === 'production') {
   if (process.send) process.send({ type: 'ready', base: t.base });
   // Resource stats for the load tester (IPC only; never exposed over HTTP).
   process.on('message', msg => {
-    if (msg?.type === 'stats') process.send({ type: 'stats', memory: process.memoryUsage(), cpu: process.cpuUsage(), uptime: process.uptime() });
+    if (msg?.type !== 'stats') return;
+    // Full GC on request (load-test leak check; only available with --expose-gc).
+    if (msg.gc && typeof global.gc === 'function') global.gc();
+    process.send({ type: 'stats', memory: process.memoryUsage(), cpu: process.cpuUsage(), uptime: process.uptime() });
   });
   const stop = () => t.close().then(() => process.exit(0));
   process.on('SIGINT', stop);
