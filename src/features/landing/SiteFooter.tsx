@@ -3,6 +3,7 @@ import { BrandLogo } from '@/components/brand/BrandLogo';
 import { LoolifyAttribution } from '@/components/brand/LoolifyAttribution';
 import { useI18n } from '@/i18n/locale';
 import { ROUTES, loginPath } from '@/routes/paths';
+import { LANDING_SECTIONS } from './sections';
 
 const linkClass = 'text-sm text-subtle no-underline transition-colors hover:text-ink';
 
@@ -10,7 +11,7 @@ export function SiteFooter() {
   const { t } = useI18n();
   const year = new Date().getFullYear();
   return (
-    <footer className="border-t border-line bg-white">
+    <footer className="border-t border-brand-night/10 bg-paper">
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-10 px-4 py-12 sm:grid-cols-[1.6fr_1fr_1fr] sm:px-6">
         <div className="col-span-2 sm:col-span-1">
           <Link to={ROUTES.home} className="inline-flex rounded-lg no-underline" aria-label="Study Planner">
@@ -23,16 +24,13 @@ export function SiteFooter() {
             {t.footer.product}
           </h2>
           <ul className="m-0 mt-3 grid list-none gap-2 p-0">
-            <li>
-              <a href="#features" className={linkClass}>
-                {t.nav.features}
-              </a>
-            </li>
-            <li>
-              <a href="#how-it-works" className={linkClass}>
-                {t.nav.howItWorks}
-              </a>
-            </li>
+            {LANDING_SECTIONS.map(s => (
+              <li key={s.id}>
+                <a href={`#${s.id}`} className={linkClass}>
+                  {t.nav[s.key]}
+                </a>
+              </li>
+            ))}
           </ul>
         </nav>
         <nav aria-labelledby="footer-account">

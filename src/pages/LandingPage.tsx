@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { ROUTES } from '@/routes/paths';
 import { SiteHeader } from '@/features/landing/SiteHeader';
 import { Hero } from '@/features/landing/Hero';
-import { Benefits, CallToAction, Features, HowItWorks, Workflow } from '@/features/landing/Sections';
+import { Closing, Extras, PathChapters, Statement } from '@/features/landing/Story';
 import { SiteFooter } from '@/features/landing/SiteFooter';
 
 /** Public entry page. Signed-in users go straight to their planner. */
@@ -25,11 +25,10 @@ export function LandingPage() {
       <SiteHeader />
       <main id="main">
         <Hero />
-        <Features />
-        <HowItWorks />
-        <Workflow />
-        <Benefits />
-        <CallToAction />
+        <Statement />
+        <PathChapters />
+        <Extras />
+        <Closing />
       </main>
       <SiteFooter />
     </div>

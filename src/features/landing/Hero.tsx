@@ -1,72 +1,95 @@
-import { BrandLogo } from '@/components/brand/BrandLogo';
-import { Icon } from '@/components/ui/Icon';
-import { LinkButton } from '@/components/ui/LinkButton';
+import { useRef, type CSSProperties } from 'react';
 import { useI18n } from '@/i18n/locale';
 import { useAuthStore } from '@/stores/authStore';
 import { ROUTES, loginPath } from '@/routes/paths';
-import { ProductPreview } from './ProductPreview';
+import { PathCta, TextCta } from './CtaLinks';
+import { HeroScene } from './HeroScene';
+import { useSceneMotion } from './useSceneMotion';
 
-const reveal = 'motion-safe:animate-fade-up';
+const rise = 'motion-safe:animate-rise';
 
+/** Clouds drifting slowly across the dawn sky, behind everything else. */
+function Sky() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="parallax absolute inset-x-0 top-[6%] h-[48%]" style={{ '--depth-x': '4px', '--depth-s': '0.2px' } as CSSProperties}>
+        <svg viewBox="0 0 1600 420" preserveAspectRatio="xMidYMid slice" className="size-full blur-[14px]" focusable="false">
+          <g fill="#fffdf6" className="motion-safe:animate-drift">
+            <ellipse cx="220" cy="120" rx="190" ry="34" opacity="0.8" />
+            <ellipse cx="330" cy="150" rx="140" ry="26" opacity="0.6" />
+            <ellipse cx="1320" cy="90" rx="220" ry="38" opacity="0.75" />
+          </g>
+          <g fill="#fffdf6" className="motion-safe:animate-drift" style={{ animationDuration: '85s', animationDirection: 'alternate-reverse' }}>
+            <ellipse cx="900" cy="60" rx="160" ry="22" opacity="0.55" />
+            <ellipse cx="1480" cy="260" rx="170" ry="28" opacity="0.5" />
+            <ellipse cx="90" cy="300" rx="150" ry="26" opacity="0.45" />
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One screen, top to bottom: the headline in the sky, the landscape filling whatever
+ * height is left, and the actions standing on the dark foot of the hill.
+ */
 export function Hero() {
   const { t } = useI18n();
   const hasSession = useAuthStore(s => s.status === 'authenticated' || s.status === 'local');
+  const ref = useRef<HTMLElement>(null);
+  useSceneMotion(ref);
 
   return (
-    <section aria-labelledby="hero-title" className="relative overflow-hidden">
-      {/* soft brand glow behind the logo */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] bg-[radial-gradient(50%_60%_at_50%_0%,#dcefe3_0%,transparent_100%)]"
-      />
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-24 sm:pt-20">
-        <div className={reveal}>
-          <span className="relative inline-flex rounded-[28px] bg-white/70 p-3 shadow-lift ring-1 ring-line sm:p-4">
-            <BrandLogo size={88} priority className="max-sm:[&_img]:w-[68px]" />
-          </span>
-        </div>
+    <section
+      ref={ref}
+      aria-labelledby="hero-title"
+      className="relative flex min-h-[max(680px,100svh)] flex-col overflow-hidden bg-linear-to-b from-dawn via-[#eef1e7] to-[#e4ece2]"
+    >
+      <Sky />
 
-        <p className={`${reveal} mt-6 inline-flex items-center gap-2 rounded-full border border-[#cfe3d6] bg-white/80 px-3 py-1 text-[13px] font-medium text-brand`} style={{ animationDelay: '60ms' }}>
-          <span className="size-1.5 rounded-full bg-brand-bright" aria-hidden="true" />
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-5 pt-24 text-center sm:px-6 md:pt-28">
+        <p className={`${rise} m-0 inline-flex items-center gap-3 text-[13px] font-medium tracking-wide text-brand sm:text-sm`}>
+          <span aria-hidden="true" className="h-px w-8 bg-brand/50" />
           {t.hero.eyebrow}
+          <span aria-hidden="true" className="h-px w-8 bg-brand/50" />
         </p>
-
         <h1
           id="hero-title"
-          className={`${reveal} mx-auto mt-5 max-w-3xl text-balance text-[2.1rem] font-bold leading-[1.2] tracking-tight text-ink sm:text-5xl lg:text-[3.6rem] lg:leading-[1.12]`}
-          style={{ animationDelay: '120ms' }}
+          className="font-display m-0 mt-4 text-balance text-[clamp(2.6rem,6.6vw,5.75rem)] font-normal leading-[1.02] tracking-[-0.01em] text-brand-night rtl:leading-[1.22] rtl:tracking-normal"
         >
-          {t.hero.title}{' '}
-          <span className="bg-linear-to-r from-brand-deep to-brand-bright bg-clip-text text-transparent rtl:bg-linear-to-l">{t.hero.titleAccent}</span>
+          <span className={`${rise} block`} style={{ animationDelay: '120ms' }}>
+            {t.hero.titleLine1}
+          </span>
+          <span className={`${rise} block italic text-brand rtl:not-italic`} style={{ animationDelay: '280ms' }}>
+            {t.hero.titleLine2}
+          </span>
         </h1>
-
-        <p className={`${reveal} mx-auto mt-5 max-w-2xl text-pretty text-base leading-relaxed text-subtle sm:text-lg`} style={{ animationDelay: '180ms' }}>
+        <p
+          className={`${rise} mx-auto m-0 mt-5 max-w-xl text-pretty text-[15px] leading-relaxed text-subtle sm:text-lg`}
+          style={{ animationDelay: '450ms' }}
+        >
           {t.hero.body}
         </p>
+      </div>
 
-        <div className={`${reveal} mt-8 flex flex-col items-stretch justify-center gap-3 xs:flex-row xs:items-center`} style={{ animationDelay: '240ms' }}>
+      <HeroScene />
+
+      {/* The foot of the hill: actions stand on solid ground. */}
+      <div className="relative z-10 -mt-px bg-brand-night px-5 pb-10 text-center sm:px-6 sm:pb-12">
+        <div className={`${rise} flex flex-wrap items-center justify-center gap-x-6 gap-y-2`} style={{ animationDelay: '650ms' }}>
           {hasSession ? (
-            <LinkButton to={ROUTES.app} size="lg">
-              {t.nav.openApp} <Icon name="arrow" size={18} />
-            </LinkButton>
+            <PathCta to={ROUTES.app}>{t.nav.openApp}</PathCta>
           ) : (
             <>
-              <LinkButton to={loginPath({ mode: 'signup' })} size="lg">
-                {t.hero.primary} <Icon name="arrow" size={18} />
-              </LinkButton>
-              <LinkButton to={loginPath()} size="lg" variant="secondary">
-                {t.hero.secondary}
-              </LinkButton>
+              <PathCta to={loginPath({ mode: 'signup' })}>{t.hero.primary}</PathCta>
+              <TextCta to={loginPath()}>{t.hero.secondary}</TextCta>
             </>
           )}
         </div>
-        <p className={`${reveal} mt-4 text-[13px] text-subtle`} style={{ animationDelay: '280ms' }}>
+        <p className={`${rise} m-0 mt-3 text-[13px] text-dawn/55`} style={{ animationDelay: '800ms' }}>
           {t.hero.note}
         </p>
-
-        <div className={`${reveal} mt-14 sm:mt-16`} style={{ animationDelay: '340ms' }}>
-          <ProductPreview />
-        </div>
       </div>
     </section>
   );
