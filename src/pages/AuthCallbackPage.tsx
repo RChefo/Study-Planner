@@ -40,41 +40,42 @@ export function AuthCallbackPage() {
 
   return (
     <AuthShell>
-      <section aria-labelledby="callback-title" className="w-full max-w-[420px] motion-safe:animate-fade-up">
-        <div className="rounded-3xl border border-line bg-white px-6 py-10 text-center shadow-hero sm:px-9">
-          <BrandLogo size={64} priority className="mx-auto" />
-          {error ? (
-            <>
-              <h1 id="callback-title" className="mb-0 mt-5 text-2xl font-bold tracking-tight text-ink">
-                {t.auth.errorTitle}
-              </h1>
-              <p role="alert" className="mx-auto mb-0 mt-3 max-w-sm text-sm leading-relaxed text-subtle">
-                {t.errors[error]}
-              </p>
-              <div className="mt-7 grid gap-3">
-                <Link
-                  to={loginPath({ next })}
-                  className="flex h-10 items-center justify-center gap-2 rounded-full bg-brand text-sm font-semibold text-white no-underline transition-colors hover:bg-brand-deep"
-                >
-                  {t.auth.tryAgain}
-                </Link>
-                <Link
-                  to={ROUTES.home}
-                  className="flex h-10 items-center justify-center gap-2 rounded-full border border-line bg-white text-sm font-semibold text-ink no-underline transition-colors hover:bg-stripe"
-                >
-                  <Icon name="arrow" size={16} className="rotate-180" /> {t.auth.back}
-                </Link>
-              </div>
-            </>
-          ) : (
-            <div role="status" aria-live="polite">
-              <h1 id="callback-title" className="mb-0 mt-5 flex items-center justify-center gap-2.5 text-xl font-bold text-ink">
-                <Spinner className="size-5 text-brand" /> {t.auth.callbackTitle}
-              </h1>
-              <p className="mb-0 mt-2 text-sm text-subtle">{t.auth.callbackBody}</p>
+      <section aria-labelledby="callback-title" className="w-full max-w-[400px] motion-safe:animate-enter">
+        <BrandLogo size={48} priority className="mb-6 max-lg:hidden" />
+        {error ? (
+          <>
+            <h1 id="callback-title" className="font-display m-0 text-[2.4rem] font-normal leading-[1.2] text-brand-night rtl:leading-[1.4]">
+              {t.auth.errorTitle}
+            </h1>
+            <div role="alert" className="mt-5 flex items-start gap-3 rounded-2xl bg-[#f8ebe0] px-4 py-3.5 text-sm leading-relaxed text-[#7a3413]">
+              <Icon name="alert" size={18} className="mt-0.5 shrink-0" />
+              <span>{t.errors[error]}</span>
             </div>
-          )}
-        </div>
+            <div className="mt-8 grid gap-3">
+              <Link
+                to={loginPath({ next })}
+                className="flex h-11 items-center justify-center gap-2 rounded-full bg-brand-night text-sm font-semibold text-dawn no-underline transition-colors hover:bg-brand-deep"
+              >
+                <Icon name="refresh" size={15} /> {t.auth.tryAgain}
+              </Link>
+              <Link
+                to={ROUTES.home}
+                className="flex h-11 items-center justify-center gap-2 rounded-full border border-line text-sm font-medium text-ink no-underline transition-colors hover:bg-white"
+              >
+                {t.auth.back}
+              </Link>
+            </div>
+          </>
+        ) : (
+          <div role="status" aria-live="polite">
+            <h1 id="callback-title" className="font-display m-0 text-[2.4rem] font-normal leading-[1.2] text-brand-night rtl:leading-[1.4]">
+              {t.auth.callbackTitle}
+            </h1>
+            <p className="m-0 mt-3 flex items-center gap-2.5 text-[15px] text-subtle">
+              <Spinner className="size-4 text-brand" /> {t.auth.callbackBody}
+            </p>
+          </div>
+        )}
       </section>
     </AuthShell>
   );

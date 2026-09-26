@@ -67,106 +67,104 @@ export function LoginPage() {
   const googleUnavailable = configLoaded && !googleClientId;
   const discordUnavailable = configLoaded && !discordEnabled;
 
+  const stagger = (ms: number) => ({ animationDelay: `${ms}ms` });
+
   return (
     <AuthShell>
-      <section aria-labelledby="auth-title" aria-busy={!!busy} className="w-full max-w-[420px] motion-safe:animate-fade-up">
-        <div className="rounded-3xl border border-line bg-white px-6 py-8 shadow-hero sm:px-9 sm:py-10">
-          <div className="text-center">
-            <BrandLogo size={64} priority className="mx-auto" />
-            <h1 id="auth-title" className="mb-0 mt-5 text-2xl font-bold tracking-tight text-ink">
-              {title}
-            </h1>
-            <p className="mb-0 mt-2 text-sm leading-relaxed text-subtle">{body}</p>
-          </div>
+      <section aria-labelledby="auth-title" aria-busy={!!busy} className="w-full max-w-[400px]">
+        <BrandLogo size={48} className="mb-6 motion-safe:animate-enter max-lg:hidden" />
+        <h1 id="auth-title" className="font-display m-0 text-[2.5rem] font-normal leading-[1.15] text-brand-night motion-safe:animate-enter rtl:leading-[1.4] sm:text-[2.9rem]" style={stagger(140)}>
+          {title}
+        </h1>
+        <p className="m-0 mt-3 text-[15px] leading-relaxed text-subtle motion-safe:animate-enter" style={stagger(200)}>
+          {body}
+        </p>
 
-          {shownError && (
-            <div role="alert" className="mt-6 flex items-start gap-2.5 rounded-xl border border-[#f1d3bf] bg-[#fdf4ee] px-3.5 py-3 text-sm leading-relaxed text-[#8a4a1f]">
-              <Icon name="alert" size={18} className="mt-0.5" />
-              <span>{t.errors[shownError]}</span>
+        {shownError && (
+          <div role="alert" className="mt-6 flex items-start gap-3 rounded-2xl bg-[#f8ebe0] px-4 py-3.5 text-sm leading-relaxed text-[#7a3413] motion-safe:animate-enter">
+            <Icon name="alert" size={18} className="mt-0.5 shrink-0" />
+            <span>{t.errors[shownError]}</span>
+          </div>
+        )}
+
+        <div className="mt-8 grid gap-3 motion-safe:animate-enter" style={stagger(260)}>
+          {/* Google: Google's own rendered button (branding rules), in a pill slot */}
+          {!configLoaded ? (
+            <div className={cn(providerButton, 'border border-line bg-white text-subtle')} aria-live="polite">
+              <Spinner /> {t.auth.loadingProviders}
+            </div>
+          ) : googleUnavailable ? (
+            <ProviderUnavailable icon={<GoogleIcon className="size-[18px]" />} label={t.auth.google} note={t.auth.googleNotConfigured} />
+          ) : busy === 'google' ? (
+            <div className={cn(providerButton, 'border border-[#dadce0] bg-white text-[#3c4043]')} role="status">
+              <Spinner className="text-brand" /> {t.auth.signingIn}
+            </div>
+          ) : (
+            <div className={cn('transition-opacity', busy && 'pointer-events-none opacity-50')}>
+              <GoogleSignInButton
+                clientId={googleClientId}
+                locale={locale}
+                label={t.auth.google}
+                onCredential={c => void onGoogleCredential(c)}
+                onLoadError={() => setError('google_script')}
+              />
             </div>
           )}
 
-          <div className="mt-7 grid gap-3">
-            {/* Google */}
-            {!configLoaded ? (
-              <div className={cn(providerButton, 'border border-line bg-stripe text-subtle')} aria-live="polite">
-                <Spinner /> {t.auth.loadingProviders}
-              </div>
-            ) : googleUnavailable ? (
-              <ProviderUnavailable icon={<GoogleIcon className="size-[18px]" />} label={t.auth.google} note={t.auth.googleNotConfigured} />
-            ) : busy === 'google' ? (
-              <div className={cn(providerButton, 'border border-[#dadce0] bg-white text-[#3c4043]')} role="status">
-                <Spinner className="text-brand" /> {t.auth.signingIn}
-              </div>
-            ) : (
-              <div className={cn(busy && 'pointer-events-none opacity-60')}>
-                <GoogleSignInButton
-                  clientId={googleClientId}
-                  locale={locale}
-                  label={t.auth.google}
-                  onCredential={c => void onGoogleCredential(c)}
-                  onLoadError={() => setError('google_script')}
-                />
-              </div>
-            )}
+          {/* Discord: full-page redirect into the server-side OAuth flow */}
+          {discordUnavailable ? (
+            <ProviderUnavailable icon={<DiscordIcon className="size-5" />} label={t.auth.discord} note={t.auth.discordNotConfigured} />
+          ) : (
+            <a
+              href={configLoaded && !busy ? discordSignInUrl(next) : undefined}
+              role={!configLoaded || busy ? 'link' : undefined}
+              aria-disabled={!configLoaded || !!busy}
+              onClick={e => {
+                if (!configLoaded || busy) return e.preventDefault();
+                setError(null);
+                setBusy('discord');
+              }}
+              className={cn(
+                providerButton,
+                'bg-discord text-white shadow-[0_8px_20px_-12px_#5865f2] hover:bg-discord-hover active:scale-[0.99]',
+                (!configLoaded || (busy && busy !== 'discord')) && 'pointer-events-none opacity-50',
+              )}
+            >
+              {busy === 'discord' ? (
+                <>
+                  <Spinner /> <span role="status">{t.auth.discordRedirecting}</span>
+                </>
+              ) : (
+                <>
+                  <DiscordIcon className="size-5" /> {t.auth.discord}
+                </>
+              )}
+            </a>
+          )}
+        </div>
 
-            {/* Discord: full-page redirect into the server-side OAuth flow */}
-            {discordUnavailable ? (
-              <ProviderUnavailable icon={<DiscordIcon className="size-5" />} label={t.auth.discord} note={t.auth.discordNotConfigured} />
-            ) : (
-              <a
-                href={configLoaded && !busy ? discordSignInUrl(next) : undefined}
-                aria-disabled={!configLoaded || !!busy}
-                onClick={e => {
-                  if (!configLoaded || busy) return e.preventDefault();
-                  setError(null);
-                  setBusy('discord');
-                }}
-                className={cn(
-                  providerButton,
-                  'bg-discord text-white hover:bg-discord-hover',
-                  (!configLoaded || (busy && busy !== 'discord')) && 'pointer-events-none opacity-60',
-                )}
-              >
-                {busy === 'discord' ? (
-                  <>
-                    <Spinner /> <span role="status">{t.auth.discordRedirecting}</span>
-                  </>
-                ) : (
-                  <>
-                    <DiscordIcon className="size-5" /> {t.auth.discord}
-                  </>
-                )}
-              </a>
-            )}
-          </div>
+        <div className="my-7 flex items-center gap-3 text-xs text-muted" aria-hidden="true">
+          <span className="h-px flex-1 bg-line" />
+          {t.auth.or}
+          <span className="h-px flex-1 bg-line" />
+        </div>
 
-          <div className="my-6 flex items-center gap-3 text-xs text-subtle" aria-hidden="true">
-            <span className="h-px flex-1 bg-line" />
-            {t.auth.or}
-            <span className="h-px flex-1 bg-line" />
-          </div>
-
+        <div className="motion-safe:animate-enter" style={stagger(320)}>
           <button
             type="button"
             onClick={onLocal}
             disabled={!!busy}
             aria-describedby="local-hint"
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-full border border-line bg-white text-sm font-semibold text-ink transition-colors hover:bg-stripe disabled:opacity-60"
+            className="group flex h-10 w-full items-center justify-center gap-2 rounded-full border border-line bg-transparent text-sm font-medium text-ink transition-colors hover:border-[#cfd9d2] hover:bg-white disabled:opacity-50"
           >
-            <Icon name="device" size={16} /> {t.auth.local}
+            <Icon name="device" size={16} className="text-subtle" /> {t.auth.local}
           </button>
           <p id="local-hint" className="mb-0 mt-2 text-center text-xs leading-relaxed text-subtle">
             {t.auth.localHint}
           </p>
-
-          <p className="mb-0 mt-7 flex items-center justify-center gap-1.5 border-t border-line pt-5 text-center text-xs leading-relaxed text-subtle">
-            <Icon name="shield" size={14} className="text-brand" />
-            {t.auth.secure}
-          </p>
         </div>
 
-        <p className="mb-0 mt-6 text-center text-sm text-subtle">
+        <p className="mb-0 mt-8 text-center text-sm text-subtle">
           {mode === 'signup' ? t.auth.toSignIn : t.auth.toSignUp}{' '}
           <Link
             to={loginPath({ mode: mode === 'signup' ? undefined : 'signup', next })}
@@ -174,6 +172,11 @@ export function LoginPage() {
           >
             {mode === 'signup' ? t.auth.toSignInLink : t.auth.toSignUpLink}
           </Link>
+        </p>
+
+        <p className="mb-0 mt-6 text-balance border-t border-line pt-5 text-center text-xs leading-relaxed text-subtle">
+          <Icon name="shield" size={14} className="me-1.5 text-brand" />
+          {t.auth.secure}
         </p>
       </section>
     </AuthShell>

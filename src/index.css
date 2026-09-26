@@ -214,3 +214,17 @@
   direction: ltr;
   text-align: right;
 }
+
+/* Auth scene: stars breathe slowly (static when motion is reduced). */
+@theme {
+  --animate-twinkle: twinkle 5s ease-in-out infinite;
+  @keyframes twinkle {
+    0%,
+    100% {
+      opacity: 0.25;
+    }
+    50% {
+      opacity: 0.95;
+    }
+  }
+}
