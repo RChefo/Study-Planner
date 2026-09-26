@@ -23,10 +23,8 @@ const ar = {
     eyebrow: 'مخطط دراسي لطلاب الجامعة',
     titleLine1: 'ترمك كلّه،',
     titleLine2: 'طريقٌ واحد واضح.',
-    body: 'Study Planner يجمع جدولك الجامعي وموادك ومحاضراتك والتزاماتك، ويحوّل كل جلسة مذاكرة إلى خطوة محسوبة نحو آخر الترم.',
     primary: 'ابدأ الآن',
     secondary: 'تسجيل الدخول',
-    note: 'الدخول عبر Google أو Discord — أو ابدأ على جهازك مباشرة.',
     sceneLabel: 'رسم توضيحي: طريق يصعد تلّة نحو شعار Study Planner، وعليه محطات من يومك الدراسي.',
   },
   scene: {
@@ -165,10 +163,8 @@ const en: Messages = {
     eyebrow: 'A study planner for university students',
     titleLine1: 'Your whole semester,',
     titleLine2: 'one clear path.',
-    body: 'Study Planner brings your timetable, courses, lectures and deadlines together — and turns every study session into a measured step toward the end of term.',
     primary: 'Get started',
     secondary: 'Sign in',
-    note: 'Sign in with Google or Discord — or start right away on this device.',
     sceneLabel: 'Illustration: a path climbing a hill toward the Study Planner logo, marked with moments from a study day.',
   },
   scene: {

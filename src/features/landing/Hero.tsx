@@ -65,12 +65,6 @@ export function Hero() {
             {t.hero.titleLine2}
           </span>
         </h1>
-        <p
-          className={`${rise} mx-auto m-0 mt-5 max-w-xl text-pretty text-[15px] leading-relaxed text-subtle sm:text-lg`}
-          style={{ animationDelay: '450ms' }}
-        >
-          {t.hero.body}
-        </p>
       </div>
 
       <HeroScene />
@@ -87,9 +81,6 @@ export function Hero() {
             </>
           )}
         </div>
-        <p className={`${rise} m-0 mt-3 text-[13px] text-dawn/55`} style={{ animationDelay: '800ms' }}>
-          {t.hero.note}
-        </p>
       </div>
     </section>
   );
