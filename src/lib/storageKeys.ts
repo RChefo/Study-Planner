@@ -11,8 +11,6 @@ export const STORAGE_KEYS = {
   locale: 'study-planner-locale',
   /** Desktop sidebar collapsed state (previous navigation; no longer read). */
   sidebarCollapsed: 'study-planner-sidebar-collapsed',
-  /** Desktop navigation rail shows labels (opt-in; compact by default). */
-  navExpanded: 'study-planner-nav-expanded',
 } as const;
 
 export const IDB = { name: 'rafiq-study-storage', version: 1, store: 'state', key: 'main' } as const;

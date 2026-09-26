@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { NavLink, Outlet, useLocation, useMatches, useNavigation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useMatches, useNavigation } from 'react-router';
 import { Icon } from '@/components/ui/Icon';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { useTimerEngine } from '@/features/timer/useTimerEngine';
 import { CommandPalette } from '@/features/search/CommandPalette';
 import { useDocumentLocale } from '@/i18n/locale';
-import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storageKeys';
 import { ROUTES } from '@/routes/paths';
 import type { RouteHandle } from '@/routes/router';
 import { cn } from '@/lib/cn';
-import { Sidebar } from './shell/Sidebar';
 import { AccountMenu } from './shell/AccountMenu';
 import { SyncIndicator } from './shell/SyncIndicator';
-import { MobileNav } from './shell/MobileNav';
+import { StudyPath } from './shell/StudyPath';
+import { JourneyNav } from './shell/JourneyNav';
+import { FocusControl } from './shell/FocusControl';
+import { SETTINGS } from './shell/navModel';
 
 function usePageTitle(): string {
   const matches = useMatches();
@@ -31,17 +32,16 @@ function RouteProgress() {
   );
 }
 
-/** True while the viewport is at least `px` wide (tracks resizes). */
-function useMinWidth(px: number): boolean {
-  const query = `(min-width: ${px}px)`;
-  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+/** True once the page has scrolled (the path area gains a quiet paper backdrop). */
+function useScrolled(): boolean {
+  const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia(query);
-    const onChange = () => setMatch(mq.matches);
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, [query]);
-  return match;
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return scrolled;
 }
 
 /** Opens the command palette on Ctrl/⌘+K, or "/" when not typing in a field. */
@@ -63,8 +63,9 @@ function useSearchShortcut(open: () => void) {
 }
 
 /**
- * Authenticated shell. Desktop: light sidebar + quiet top bar (search · focus · sync ·
- * account). Phone/tablet: compact top bar + bottom navigation with a centred focus button.
+ * Authenticated shell, built around the study path. No sidebar and no tab bar: the path
+ * itself (desktop) or a journey selector (phones) is the navigation, drawn quietly above the
+ * page; Focus floats as a separate control; search, sync, settings and account sit aside.
  */
 export function AppShell() {
   // The dashboard is Arabic-only, whatever language the public pages were viewed in.
@@ -72,10 +73,7 @@ export function AppShell() {
   useTimerEngine();
   const title = usePageTitle();
   const location = useLocation();
-  const [expanded, setExpanded] = useState(() => readLocal(STORAGE_KEYS.navExpanded) === '1');
-  // Labels need room: the rail stays compact below 1280px whatever the preference.
-  const roomy = useMinWidth(1280);
-  const showLabels = expanded && roomy;
+  const scrolled = useScrolled();
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const mainRef = useRef<HTMLElement>(null);
@@ -91,11 +89,7 @@ export function AppShell() {
     mainRef.current?.focus({ preventScroll: true });
   }, [location.pathname]);
 
-  const toggleExpanded = () =>
-    setExpanded(e => {
-      writeLocal(STORAGE_KEYS.navExpanded, e ? null : '1');
-      return !e;
-    });
+  const quiet = 'grid size-9 place-items-center rounded-full text-subtle transition-colors hover:bg-ink/5 hover:text-ink';
 
   return (
     <div className="min-h-dvh bg-paper text-ink">
@@ -104,60 +98,48 @@ export function AppShell() {
       </a>
       <RouteProgress />
 
-      {/* Desktop: a floating rail inset from the edge; labels only when the student opts in (xl+). */}
-      <aside
-        className={cn(
-          'fixed inset-y-3 start-3 z-30 hidden rounded-[26px] bg-brand-night shadow-[0_18px_40px_-24px_#0c2f26] transition-[width] duration-300 ease-out motion-reduce:transition-none lg:block',
-          showLabels ? 'w-[228px]' : 'w-[76px]',
-        )}
-      >
-        <Sidebar expanded={showLabels} onToggleExpanded={toggleExpanded} />
-      </aside>
+      <header className={cn('sticky top-0 z-30 transition-[background-color,box-shadow] duration-300', scrolled && 'bg-paper/90 shadow-[0_1px_0_#0d2a2010] backdrop-blur-md')}>
+        <nav aria-label="التنقل الرئيسي" className="mx-auto flex h-16 max-w-[1240px] items-center gap-2 px-4 sm:px-6 lg:h-[92px] lg:gap-6 lg:px-10">
+          <Link to={ROUTES.app} className="shrink-0 rounded-lg" aria-label="Study Planner — اليوم">
+            <BrandLogo size={32} priority />
+          </Link>
 
-      <div className={cn('flex min-h-dvh flex-col transition-[padding] duration-300 ease-out motion-reduce:transition-none', showLabels ? 'lg:ps-[240px]' : 'lg:ps-[88px]')}>
-        <header className="sticky top-0 z-20 bg-paper/85 backdrop-blur-md">
-          <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-2 px-4 sm:px-6 lg:px-10">
-            <NavLink to={ROUTES.app} end className="rounded-lg lg:hidden" aria-label="Study Planner — الرئيسية">
-              <BrandLogo size={30} />
-            </NavLink>
-            <p className="m-0 min-w-0 truncate text-[15px] font-semibold text-ink lg:hidden" aria-hidden="true">
-              {title}
-            </p>
+          <div className="hidden min-w-0 flex-1 lg:block">
+            <StudyPath />
+          </div>
+          <div className="min-w-0 flex-1 lg:hidden">
+            <JourneyNav />
+          </div>
 
-            {/* Search: a field-like button on desktop, an icon on phones. */}
-            <button
-              type="button"
-              onClick={openSearch}
-              aria-label="بحث (Ctrl+K)"
-              className="hidden h-10 w-full max-w-sm items-center gap-2.5 rounded-full border border-line bg-white/70 ps-3.5 pe-2 text-[13px] text-muted transition-colors hover:border-[#cfd9d2] hover:bg-white lg:flex"
-            >
-              <Icon name="search" size={16} />
-              <span className="flex-1 text-start">ابحث في موادك ومحاضراتك…</span>
-              <kbd dir="ltr" className="rounded-md border border-line bg-paper px-1.5 py-0.5 font-sans text-[11px] text-subtle">
-                Ctrl K
-              </kbd>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button type="button" onClick={openSearch} aria-label="بحث (Ctrl+K)" title="بحث · Ctrl K" className={quiet}>
+              <Icon name="search" size={18} />
             </button>
-
-            <div className="ms-auto flex items-center gap-1">
-              <button type="button" onClick={openSearch} aria-label="بحث" className="grid size-9 place-items-center rounded-full text-subtle hover:bg-ink/5 hover:text-ink lg:hidden">
-                <Icon name="search" size={19} />
-              </button>
-              <span className="max-lg:hidden">
-                <SyncIndicator compact />
-              </span>
-              <AccountMenu />
-            </div>
+            <span className="max-lg:hidden">
+              <SyncIndicator compact />
+            </span>
+            <NavLink
+              to={SETTINGS.to}
+              aria-label={SETTINGS.label}
+              title={SETTINGS.label}
+              className={({ isActive }) =>
+                cn(quiet, 'relative max-lg:hidden', isActive && 'text-brand-night after:absolute after:bottom-0.5 after:size-1 after:rounded-full after:bg-[#e0a94f]')
+              }
+            >
+              <Icon name={SETTINGS.icon} size={18} />
+            </NavLink>
+            <AccountMenu />
           </div>
-        </header>
+        </nav>
+      </header>
 
-        <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-28 pt-4 outline-none sm:px-6 sm:pt-6 lg:px-10 lg:pb-16">
-          <div key={location.pathname} className="motion-safe:animate-enter">
-            <Outlet />
-          </div>
-        </main>
-      </div>
+      <main id="app-main" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-[1180px] flex-1 px-4 pb-28 pt-4 outline-none sm:px-6 sm:pt-6 lg:px-10 lg:pb-24 lg:pt-2">
+        <div key={location.pathname} className="motion-safe:animate-enter">
+          <Outlet />
+        </div>
+      </main>
 
-      <MobileNav />
+      <FocusControl />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
