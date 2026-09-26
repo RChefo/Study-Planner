@@ -1,5 +1,6 @@
 import type { Commitment, Course, Lecture, PlannerData, PlannerPreferences, StudyLogEntry, StudySession, StudySessionStatus } from '@/types';
 import { parseOnboarding } from '@/features/onboarding/tourModel';
+import { normalizeTimetables } from '@/features/timetable/builder';
 import { stripUnsafeAttachments } from './attachments';
 
 /**
@@ -96,11 +97,16 @@ export function normalizePlannerData(raw: unknown, keepTimetable = true): Planne
   };
   const prefs = preferences(r.preferences);
   if (prefs) data.preferences = prefs;
+  const tt = normalizeTimetables(r.timetables, r.activeTimetableId, data.courses.map(c => c.id));
+  if (tt.timetables) {
+    data.timetables = tt.timetables;
+    data.activeTimetableId = tt.activeTimetableId ?? null;
+  }
   return stripUnsafeAttachments(data).data;
 }
 
 export function hasPlannerContent(d: PlannerData): boolean {
-  return !!(d.courses.length || d.sessions.length || d.commitments.length || d.studyLog.length);
+  return !!(d.courses.length || d.sessions.length || d.commitments.length || d.studyLog.length || d.timetables?.length);
 }
 
 /** Copy for localStorage: attachments stripped so it fits the ~5 MB quota. */

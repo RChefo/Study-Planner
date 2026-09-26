@@ -4,6 +4,7 @@ import { pickTimerSettings, timerState, useTimerStore } from '@/stores/timerStor
 import { plannerData, usePlannerStore } from '@/stores/plannerStore';
 import { toast } from '@/stores/uiStore';
 import { normalizePlannerData } from '@/lib/plannerData';
+import { DAY_LABEL, typeLabel } from '@/features/timetable/builder';
 
 /** Attachments present in (possibly untrusted) planner-shaped data. */
 function countAttachments(d: Partial<PlannerData>): number {
@@ -88,7 +89,16 @@ export async function exportExcelBackup(): Promise<void> {
       ]),
       [26, 34, 26, 26, 18, 18],
     );
-    addSheet(wb, 'الجدول الدراسي', ['الحالة'], [['ثابت داخل ملفات الموقع — للعرض فقط']], [52]);
+    const courseName = new Map(db.courses.map(c => [c.id, c.name]));
+    addSheet(
+      wb,
+      'الجدول الدراسي',
+      ['الجدول', 'اليوم', 'من', 'إلى', 'الحصة', 'المادة', 'النوع', 'المجموعة', 'المحاضر', 'المكان', 'ملاحظات'],
+      (db.timetables ?? []).flatMap(p =>
+        p.entries.map(e => [p.name, DAY_LABEL[e.day], e.start, e.end, e.kind === 'break' ? `${e.title} (استراحة)` : e.title, (e.courseId && courseName.get(e.courseId)) || '', typeLabel(e.type), e.group ?? '', e.instructor ?? '', e.room ?? '', e.notes ?? '']),
+      ),
+      [22, 12, 9, 9, 28, 24, 12, 16, 22, 14, 30],
+    );
 
     const backup: SyncedPlannerData = { ...db, timerSettings: pickTimerSettings(timerState()) };
     const parts = splitBackupText(JSON.stringify(backup));

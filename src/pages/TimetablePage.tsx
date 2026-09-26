@@ -2,14 +2,15 @@ import { Link } from 'react-router';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { PageHeader } from '@/components/ui/Card';
 import { TimetableView } from '@/features/timetable/TimetableView';
+import { TimetableBuilder } from '@/features/timetable/builder/TimetableBuilder';
 import { useDocumentLocale } from '@/i18n/locale';
 import { ROUTES } from '@/routes/paths';
 
 const DESCRIPTION = 'تكنولوجيا الأمن السيبراني · الفرقة الثالثة · الفصل الأول 2026/2027';
 
-/** In-app timetable. */
+/** In-app timetable: the student's own, customizable timetables. */
 export function TimetablePage() {
-  return <TimetableView header={controls => <PageHeader title="الجدول" description={DESCRIPTION} actions={controls} />} />;
+  return <TimetableBuilder />;
 }
 
 /** Full-page timetable at /university-timetable, without the app shell or sign-in. */

@@ -84,6 +84,67 @@ const preferences = z.object({
   onboarding: z.strictObject({ status: z.enum(['completed', 'skipped']), at: z.number().int().min(0).max(8.64e15) }).optional(),
 });
 
+// ---------- student-built timetables ----------
+const DAYS = ['sat', 'sun', 'mon', 'tue', 'wed', 'thu', 'fri'];
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'time must be HH:MM');
+const minutes = t => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const endsAfterStart = (v, ctx) => {
+  if (minutes(v.end) <= minutes(v.start)) ctx.addIssue({ code: 'custom', path: ['end'], message: 'end must be after start' });
+};
+
+const timetablePeriod = z.strictObject({ id: shortId, name: text(60), start: hhmm, end: hhmm }).superRefine(endsAfterStart);
+
+const timetableEntry = z
+  .strictObject({
+    id: shortId,
+    kind: z.enum(['class', 'break']),
+    day: z.enum(DAYS),
+    start: hhmm,
+    end: hhmm,
+    title: text(120),
+    courseId: shortId.nullable().optional(),
+    type: z.enum(['lecture', 'tutorial', 'lab', 'seminar', 'exam', 'other']).nullable().optional(),
+    group: text(60).optional(),
+    instructor: text(120).optional(),
+    room: text(80).optional(),
+    notes: text(1000).optional(),
+    color: z.enum(['forest', 'gold', 'clay', 'sky', 'plum', 'slate']).nullable().optional(),
+    periodId: shortId.nullable().optional(),
+  })
+  .superRefine(endsAfterStart);
+
+const timetableProfile = z
+  .strictObject({
+    id: shortId,
+    name: z.string().min(1).max(80),
+    description: text(300).optional(),
+    archived: z.boolean().optional(),
+    days: z.array(z.enum(DAYS)).min(1).max(7),
+    firstDay: z.enum(DAYS),
+    mode: z.enum(['free', 'periods']),
+    dayStart: hhmm,
+    dayEnd: hhmm,
+    periods: z.array(timetablePeriod).max(40),
+    groups: z.array(text(60)).max(60),
+    display: z.strictObject({ density: z.enum(['compact', 'detailed']), showRoom: z.boolean(), showInstructor: z.boolean(), showGroup: z.boolean() }),
+    entries: z.array(timetableEntry).max(600),
+    createdAt: z.number().int().min(0),
+    updatedAt: z.number().int().min(0),
+  })
+  .superRefine((p, ctx) => {
+    if (minutes(p.dayEnd) <= minutes(p.dayStart)) ctx.addIssue({ code: 'custom', path: ['dayEnd'], message: 'day must end after it starts' });
+    if (new Set(p.days).size !== p.days.length) ctx.addIssue({ code: 'custom', path: ['days'], message: 'duplicate day' });
+    if (!p.days.includes(p.firstDay)) ctx.addIssue({ code: 'custom', path: ['firstDay'], message: 'first day must be one of the days' });
+    const periodIds = new Set(p.periods.map(x => x.id));
+    if (periodIds.size !== p.periods.length) ctx.addIssue({ code: 'custom', path: ['periods'], message: 'duplicate period id' });
+    const entryIds = new Set();
+    p.entries.forEach((e, i) => {
+      if (entryIds.has(e.id)) ctx.addIssue({ code: 'custom', path: ['entries', i, 'id'], message: 'duplicate entry id' });
+      entryIds.add(e.id);
+      if (e.periodId && !periodIds.has(e.periodId)) ctx.addIssue({ code: 'custom', path: ['entries', i, 'periodId'], message: 'unknown period' });
+    });
+  });
+
 const plannerData = z.object({
   courses: z.array(course).max(500),
   sessions: z.array(studySession).max(5000).optional().default([]),
@@ -92,6 +153,20 @@ const plannerData = z.object({
   timetable: z.object({ name: text(255), type: text(100) }).nullable().optional().default(null),
   timerSettings: timerSettings.optional(),
   preferences: preferences.optional(),
+  timetables: z.array(timetableProfile).max(20).optional(),
+  activeTimetableId: shortId.nullable().optional(),
+}).superRefine((d, ctx) => {
+  // Cross-references inside the student's own document: courses and the active profile must exist.
+  const courseIds = new Set(d.courses.map(c => c.id));
+  const profileIds = new Set();
+  (d.timetables ?? []).forEach((p, i) => {
+    if (profileIds.has(p.id)) ctx.addIssue({ code: 'custom', path: ['timetables', i, 'id'], message: 'duplicate timetable id' });
+    profileIds.add(p.id);
+    p.entries.forEach((e, j) => {
+      if (e.courseId && !courseIds.has(e.courseId)) ctx.addIssue({ code: 'custom', path: ['timetables', i, 'entries', j, 'courseId'], message: 'unknown course' });
+    });
+  });
+  if (d.activeTimetableId && !profileIds.has(d.activeTimetableId)) ctx.addIssue({ code: 'custom', path: ['activeTimetableId'], message: 'unknown timetable' });
 });
 
 const schemas = {

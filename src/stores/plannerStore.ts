@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { emptyPlannerData, type Commitment, type Lecture, type OnboardingStatus, type PlannerData, type StudyLogEntry } from '@/types';
 import { persistPlanner } from '@/services/persistence';
 import { uid } from '@/lib/id';
+import { unlinkCourse, type TimetableState } from '@/features/timetable/builder';
 
 type Mutator = (data: PlannerData) => PlannerData;
 export type PlannerCollection = 'courses' | 'commitments' | 'sessions';
@@ -20,6 +21,8 @@ interface PlannerState {
   setLectureFile: (courseId: string, index: number, file: { pdf: string; pdfName: string } | null) => Promise<void>;
   setDailyGoal: (minutes: number) => Promise<void>;
   setOnboarding: (status: OnboardingStatus) => Promise<void>;
+  /** Applies a pure timetable operation (see features/timetable/builder). */
+  updateTimetables: (fn: (s: TimetableState) => TimetableState) => Promise<void>;
   saveCommitment: (commitment: Commitment) => Promise<void>;
   setCommitmentDone: (id: string, done: boolean) => Promise<void>;
   deleteItem: (collection: PlannerCollection, id: string) => Promise<void>;
@@ -61,6 +64,11 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
       ),
     ),
   setDailyGoal: minutes => get().commit(d => ({ ...d, preferences: { ...d.preferences, dailyGoalMinutes: minutes } })),
+  updateTimetables: fn =>
+    get().commit(d => {
+      const next = fn({ timetables: d.timetables ?? [], activeTimetableId: d.activeTimetableId ?? null });
+      return { ...d, timetables: next.timetables, activeTimetableId: next.activeTimetableId };
+    }),
   setOnboarding: status => get().commit(d => ({ ...d, preferences: { ...d.preferences, onboarding: { status, at: Date.now() } } })),
   saveCommitment: commitment =>
     get().commit(d => ({
@@ -74,8 +82,11 @@ export const usePlannerStore = create<PlannerState>((set, get) => ({
   deleteItem: (collection, id) =>
     get().commit(d => {
       switch (collection) {
-        case 'courses':
-          return { ...d, courses: d.courses.filter(x => x.id !== id) };
+        case 'courses': {
+          // Timetable classes linked to the course keep their title and become standalone.
+          const name = d.courses.find(x => x.id === id)?.name ?? '';
+          return { ...d, courses: d.courses.filter(x => x.id !== id), timetables: unlinkCourse(d.timetables, id, name) };
+        }
         case 'commitments':
           return { ...d, commitments: d.commitments.filter(x => x.id !== id) };
         case 'sessions':

@@ -82,6 +82,70 @@ export interface PlannerPreferences {
   onboarding?: { status: OnboardingStatus; at: number };
 }
 
+/* ---------- Student-built timetables ---------- */
+
+/** Weekday ids (not tied to any week start). */
+export type DayId = 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri';
+export type TimeMode = 'free' | 'periods';
+export type ClassType = 'lecture' | 'tutorial' | 'lab' | 'seminar' | 'exam' | 'other';
+export type EntryColor = 'forest' | 'gold' | 'clay' | 'sky' | 'plum' | 'slate';
+
+/** A named slot of the student's own day structure ("المحاضرة الأولى 08:00–09:30"). */
+export interface TimetablePeriod {
+  id: string;
+  name: string;
+  /** "HH:MM", 24-hour. */
+  start: string;
+  end: string;
+}
+
+/** One weekly recurring item: an academic class, or a named break (lunch, prayer, commute). */
+export interface TimetableEntry {
+  id: string;
+  kind: 'class' | 'break';
+  day: DayId;
+  start: string;
+  end: string;
+  title: string;
+  /** Links to an existing course instead of duplicating it (null = standalone). */
+  courseId?: string | null;
+  type?: ClassType | null;
+  group?: string;
+  instructor?: string;
+  room?: string;
+  notes?: string;
+  color?: EntryColor | null;
+  /** Period-mode entries keep their period so editing the period moves them too. */
+  periodId?: string | null;
+}
+
+export interface TimetableDisplay {
+  density: 'compact' | 'detailed';
+  showRoom: boolean;
+  showInstructor: boolean;
+  showGroup: boolean;
+}
+
+export interface TimetableProfile {
+  id: string;
+  name: string;
+  description?: string;
+  archived?: boolean;
+  days: DayId[];
+  firstDay: DayId;
+  mode: TimeMode;
+  /** Visible range of the week grid. */
+  dayStart: string;
+  dayEnd: string;
+  periods: TimetablePeriod[];
+  /** The student's own group names, offered when adding entries. */
+  groups: string[];
+  display: TimetableDisplay;
+  entries: TimetableEntry[];
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface PlannerData {
   courses: Course[];
   sessions: StudySession[];
@@ -89,6 +153,9 @@ export interface PlannerData {
   studyLog: StudyLogEntry[];
   timetable: LegacyTimetableRef | null;
   preferences?: PlannerPreferences;
+  /** Timetables the student built (absent in older data = none yet). */
+  timetables?: TimetableProfile[];
+  activeTimetableId?: string | null;
 }
 
 export const emptyPlannerData = (): PlannerData => ({
